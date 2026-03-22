@@ -1266,7 +1266,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                 onAdd={(product, variant, notes, extraPrice) => {
                     // We need to pass notes and extraPrice to addItem
                     // We'll update useCartStore to handle this
-                    addItem(product, variant, 1, notes, extraPrice);
+                    addItem(product, variant, 1, notes, extraPrice, currentCourse);
                     setVariantModalOpen(false);
                 }} 
             />;

@@ -609,7 +609,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
       setImageFile(null);
       setTagInput('');
       setNewVariant({ name: '', cost_price: 0, selling_price: 0, stock_current: 0 });
-      setIngredientForm({ productId: '', quantity: '' });
+      setIngredientForm({ productId: '', quantity: '', yieldPercentage: '100' });
     } else if (activeTab === 'categories') {
        setSimpleFormName(item ? item.name : '');
        setSimpleFormKdsStation(item ? (item.kds_station || 'none') : 'none');
