@@ -93,10 +93,10 @@ const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, 
             </div>
 
             {/* Tags (Hidden on Mobile) */}
-            <div className="w-32 hidden lg:flex items-center p-2">
-                <div className="flex flex-wrap gap-1 overflow-hidden h-6">
-                    {product.attributes?.slice(0, 2).map((tag, i) => (
-                        <span key={i} className="text-[9px] bg-brand-900 border border-brand-700 px-1.5 py-0.5 rounded text-gray-400">{tag}</span>
+            <div className="w-64 hidden lg:flex items-center p-2" title={InventoryService.getRegularAttributes(product).join(', ')}>
+                <div className="flex flex-wrap gap-1 overflow-hidden max-h-14">
+                    {InventoryService.getRegularAttributes(product).map((tag, i) => (
+                        <span key={i} className="text-[9px] bg-brand-900 border border-brand-700 px-1.5 py-0.5 rounded text-gray-400 whitespace-nowrap">{tag}</span>
                     ))}
                 </div>
             </div>
@@ -137,12 +137,8 @@ const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, 
             {/* Actions */}
             <div className="w-48 text-right p-2 pr-4 flex justify-end gap-2">
                 <button onClick={() => data.handleOpenBarcodeModal(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-green-400 rounded hover:border-green-400 hover:bg-green-500/20" title="Imprimir Etiqueta"><Barcode size={14} /></button>
-                {!product.is_compound && (
-                    <>
-                        <button onClick={() => handleOpenWasteModal(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-orange-400 rounded hover:border-orange-400 hover:bg-orange-500/20" title="Merma"><TrendingDown size={14} /></button>
-                        <button onClick={() => handleOpenHistory(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-purple-400 rounded hover:border-purple-400 hover:bg-purple-500/20" title="Historial"><HistoryIcon size={14} /></button>
-                    </>
-                )}
+                <button onClick={() => handleOpenWasteModal(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-orange-400 rounded hover:border-orange-400 hover:bg-orange-500/20" title="Merma"><TrendingDown size={14} /></button>
+                <button onClick={() => handleOpenHistory(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-purple-400 rounded hover:border-purple-400 hover:bg-purple-500/20" title="Historial"><HistoryIcon size={14} /></button>
                 <button onClick={() => handleOpenModal(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-blue-400 rounded hover:border-blue-400"><Edit2 size={14} /></button>
                 <button onClick={(e) => onRequestDelete(product, 'products', e)} className="p-1.5 bg-brand-900 border border-brand-600 text-red-400 rounded hover:border-red-400 hover:bg-red-500/20"><Trash2 size={14} /></button>
             </div>
@@ -1244,7 +1240,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                 <div className="w-12 text-center p-4 bg-brand-800"><button onClick={toggleSelectAll} className="text-gray-400 hover:text-white transition-colors">{selectedProductIds.size > 0 && selectedProductIds.size === filteredProducts.length ? <CheckSquare size={18} /> : <Square size={18} />}</button></div>
                 <div className="flex-1 p-4 bg-brand-800">Producto</div>
                 <div className="w-24 hidden md:block p-4 bg-brand-800">Tipo</div>
-                <div className="w-32 hidden lg:block p-4 bg-brand-800">Detalles</div>
+                <div className="w-64 hidden lg:block p-4 bg-brand-800">Detalles</div>
                 <div className="w-24 text-right p-4 bg-brand-800">Coste</div>
                 <div className="w-24 text-right p-4 bg-brand-800">PVP</div>
                 <div className="w-20 text-center p-4 bg-brand-800">Stock</div>
