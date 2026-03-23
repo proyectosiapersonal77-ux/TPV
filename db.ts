@@ -2,7 +2,7 @@ import Dexie, { Table } from 'dexie';
 import { 
     Product, ProductCategory, ProductSubcategory, Supplier, Allergen, 
     Table as RestaurantTable, Zone, Employee, Role, UnitOfMeasure, WasteReason,
-    CashRegister, CashMovement, Course
+    CashRegister, CashMovement, Course, Promotion
 } from './types';
 
 // Define the Offline Mutation Queue Item
@@ -31,6 +31,7 @@ export class GastroDB extends Dexie {
     zones!: Table<Zone>;
     employees!: Table<Employee>;
     roles!: Table<Role>;
+    promotions!: Table<Promotion>;
 
     // Transactions / POS (Offline Capable)
     orders!: Table<any>; // Storing denormalized orders for offline view
@@ -47,8 +48,8 @@ export class GastroDB extends Dexie {
     constructor() {
         super('GastroPOS_DB');
         
-        // Bumped to version 6 for purchase orders
-        (this as any).version(6).stores({
+        // Bumped to version 7 for promotions
+        (this as any).version(7).stores({
             // Core Inventory
             products: 'id, name, category_id, subcategory_id, supplier_id',
             categories: 'id, name',
@@ -64,6 +65,7 @@ export class GastroDB extends Dexie {
             zones: 'id, name',
             employees: 'id, name, pin',
             roles: 'id, name',
+            promotions: 'id, name, is_active',
 
             // POS & Sync
             orders: 'id, table_id, status, created_at', 

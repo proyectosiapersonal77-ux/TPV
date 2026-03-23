@@ -4,11 +4,11 @@ import {
   TrendingUp, AlertTriangle, CheckCircle, Truck, Tag, DollarSign,
   Loader2, MoreHorizontal, ArrowLeft, Info, GitFork, CheckSquare, Square, FolderInput,
   ChevronLeft, ChevronRight, XCircle, ShieldAlert, Wheat, Layers, Scroll, Scale, Utensils,
-  Droplets, Box, Ruler, Upload, Image as ImageIcon, History as HistoryIcon, Clock, TrendingDown, Ban, Download, Barcode
+  Droplets, Box, Ruler, Upload, Image as ImageIcon, History as HistoryIcon, Clock, TrendingDown, Ban, Download, Barcode, Percent
 } from 'lucide-react';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { Product, ProductCategory, ProductSubcategory, Supplier, Allergen, ProductVariant, ProductIngredient, StockUnit, UnitOfMeasure, StockMovement, Employee, WasteReason, ViewState, ProductModifier, Course } from '../../types';
+import { Product, ProductCategory, ProductSubcategory, Supplier, Allergen, ProductVariant, ProductIngredient, StockUnit, UnitOfMeasure, StockMovement, Employee, WasteReason, ViewState, ProductModifier, Course, Promotion } from '../../types';
 import * as InventoryService from '../../services/inventoryService';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -17,7 +17,7 @@ import { supabase } from '../../Supabase';
 import AdminNavigation from '../AdminNavigation';
 import BarcodeLib from 'react-barcode';
 
-type InventoryTab = 'products' | 'categories' | 'subcategories' | 'suppliers' | 'allergens' | 'units' | 'waste_reasons' | 'courses' | 'purchase_orders';
+type InventoryTab = 'products' | 'categories' | 'subcategories' | 'suppliers' | 'allergens' | 'units' | 'waste_reasons' | 'courses' | 'purchase_orders' | 'promotions';
 type EditableField = 'cost_price' | 'selling_price' | 'stock_current';
 
 interface InventoryManagementProps {
@@ -187,6 +187,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
   const { data: units = [] } = useQuery({ queryKey: ['units'], queryFn: InventoryService.getAllUnits });
   const { data: wasteReasons = [] } = useQuery({ queryKey: ['wasteReasons'], queryFn: InventoryService.getAllWasteReasons });
   const { data: courses = [] } = useQuery({ queryKey: ['courses'], queryFn: InventoryService.getAllCourses });
+  const { data: promotions = [] } = useQuery({ queryKey: ['promotions'], queryFn: InventoryService.getPromotions });
 
   // Purchase Orders Query
   const { data: purchaseOrders = [], refetch: refetchPurchaseOrders } = useQuery({
@@ -320,6 +321,17 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
       stock_current: 0
   });
   
+  const [promotionForm, setPromotionForm] = useState<Partial<Promotion>>({
+      name: '',
+      discount_type: 'percentage',
+      discount_value: 0,
+      start_time: '00:00',
+      end_time: '23:59',
+      days_of_week: [0, 1, 2, 3, 4, 5, 6],
+      applicable_categories: [],
+      is_active: true
+  });
+
   // Forms for simple entities
   const [simpleFormName, setSimpleFormName] = useState(''); 
   const [simpleFormParentId, setSimpleFormParentId] = useState(''); 
@@ -639,6 +651,21 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
         } else {
             setPurchaseOrderForm({ supplier_id: '', expected_date: '', notes: '', items: [] });
         }
+    } else if (activeTab === 'promotions') {
+        setPromotionForm(item ? {
+            ...item,
+            applicable_products: item.applicable_products || []
+        } : {
+            name: '',
+            discount_type: 'percentage',
+            discount_value: 0,
+            start_time: '00:00',
+            end_time: '23:59',
+            days_of_week: [0, 1, 2, 3, 4, 5, 6],
+            applicable_categories: [],
+            applicable_products: [],
+            is_active: true
+        });
     }
     setIsModalOpen(true);
   };
@@ -893,6 +920,12 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
           }
           
           refetchPurchaseOrders();
+      } else if (activeTab === 'promotions') {
+          await InventoryService.savePromotion({
+              ...promotionForm,
+              id: editingItem?.id
+          } as Promotion);
+          queryClient.invalidateQueries({ queryKey: ['promotions'] });
       }
       setIsModalOpen(false);
     } catch (err: any) {
@@ -977,6 +1010,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
       if (type === 'units') await InventoryService.deleteUnit(id);
       if (type === 'waste_reasons') await InventoryService.deleteWasteReason(id);
       if (type === 'courses') await InventoryService.deleteCourse(id);
+      if (type === 'promotions') await InventoryService.deletePromotion(id);
       if (type === 'purchase_orders') {
           const { error } = await supabase.from('purchase_orders').delete().eq('id', id);
           if (error) throw error;
@@ -1206,6 +1240,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
               <button title="Unidades de Medida" onClick={() => setActiveTab('units')} className={`p-2 rounded-md transition-all ${activeTab === 'units' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Scale size={20} /></button>
               <button title="Tipos de Merma" onClick={() => setActiveTab('waste_reasons')} className={`p-2 rounded-md transition-all ${activeTab === 'waste_reasons' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Ban size={20} /></button>
               <button title="Turnos (Marchar)" onClick={() => setActiveTab('courses')} className={`p-2 rounded-md transition-all ${activeTab === 'courses' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Clock size={20} /></button>
+              <button title="Promociones" onClick={() => setActiveTab('promotions')} className={`p-2 rounded-md transition-all ${activeTab === 'promotions' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Percent size={20} /></button>
             </div>
             {activeTab === 'products' && (
                 <div className="flex gap-2 items-center">
@@ -1291,6 +1326,58 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
               {activeTab === 'waste_reasons' && wasteReasons.map(reason => (<div key={reason.id} className="bg-brand-800 border border-brand-700 p-4 rounded-xl flex flex-col items-center justify-center gap-3 relative group hover:border-brand-500 transition-colors min-h-[120px]"><div className="absolute top-2 right-2 flex gap-1"><button onClick={() => handleOpenModal(reason)} className="text-blue-400 p-1 hover:bg-blue-500/20 rounded cursor-pointer transition-colors"><Edit2 size={14} /></button><button onClick={(e) => onRequestDelete(reason, 'waste_reasons', e)} className="text-red-400 p-1 hover:bg-red-500/20 rounded cursor-pointer transition-colors"><Trash2 size={14} /></button></div><div className="p-3 bg-red-500/10 rounded-full mb-1"><TrendingDown size={24} className="text-red-400" /></div><span className="font-bold text-center text-red-200">{reason.name}</span></div>))}
               {activeTab === 'courses' && courses.map(course => (<div key={course.id} className="bg-brand-800 border border-brand-700 p-4 rounded-xl flex flex-col items-center justify-center gap-3 relative group hover:border-brand-500 transition-colors min-h-[120px]"><div className="absolute top-2 right-2 flex gap-1"><button onClick={() => handleOpenModal(course)} className="text-blue-400 p-1 hover:bg-blue-500/20 rounded cursor-pointer transition-colors"><Edit2 size={14} /></button><button onClick={(e) => onRequestDelete(course, 'courses', e)} className="text-red-400 p-1 hover:bg-red-500/20 rounded cursor-pointer transition-colors"><Trash2 size={14} /></button></div><div className="p-3 bg-orange-500/10 rounded-full mb-1"><Clock size={24} className="text-orange-400" /></div><span className="font-bold text-center text-orange-200">{course.name}</span><span className="text-xs text-gray-400">Orden: {course.order_index}</span></div>))}
               
+              {activeTab === 'promotions' && promotions.map(promo => (
+                  <div key={promo.id} className="bg-brand-800 border border-brand-700 p-4 rounded-xl flex flex-col gap-3 relative group hover:border-brand-500 transition-colors min-h-[120px] col-span-2 md:col-span-3 lg:col-span-4">
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleOpenModal(promo)} className="text-blue-400 p-1 hover:bg-blue-500/20 rounded cursor-pointer transition-colors"><Edit2 size={14} /></button>
+                          <button onClick={(e) => onRequestDelete(promo, 'promotions', e)} className="text-red-400 p-1 hover:bg-red-500/20 rounded cursor-pointer transition-colors"><Trash2 size={14} /></button>
+                      </div>
+                      
+                      <div className="flex justify-between items-start">
+                          <div>
+                              <span className="font-bold block text-lg">{promo.name}</span>
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${promo.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                  {promo.is_active ? 'Activa' : 'Inactiva'}
+                              </span>
+                          </div>
+                          <div className="text-right">
+                              <span className="text-2xl font-black text-brand-accent">
+                                  {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : `${promo.discount_value.toFixed(2)}€`}
+                              </span>
+                          </div>
+                      </div>
+                      
+                      <div className="bg-brand-900/50 p-2 rounded-lg border border-brand-700/50 flex flex-col gap-1">
+                          <div className="flex justify-between text-xs text-gray-400">
+                              <span>Horario:</span>
+                              <span className="text-white">{promo.start_time} - {promo.end_time}</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-400">
+                              <span>Días:</span>
+                              <span className="text-white">
+                                  {promo.days_of_week?.map(d => ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][d]).join(', ')}
+                              </span>
+                          </div>
+                          {promo.applicable_categories && promo.applicable_categories.length > 0 && (
+                              <div className="flex justify-between text-xs text-gray-400 mt-1 pt-1 border-t border-brand-700/50">
+                                  <span>Categorías:</span>
+                                  <span className="text-white text-right max-w-[60%] truncate" title={promo.applicable_categories.map(cid => categories.find(c => c.id === cid)?.name).join(', ')}>
+                                      {promo.applicable_categories.map(cid => categories.find(c => c.id === cid)?.name).filter(Boolean).join(', ')}
+                                  </span>
+                              </div>
+                          )}
+                          {promo.applicable_products && promo.applicable_products.length > 0 && (
+                              <div className="flex justify-between text-xs text-gray-400 mt-1 pt-1 border-t border-brand-700/50">
+                                  <span>Productos:</span>
+                                  <span className="text-white text-right max-w-[60%] truncate" title={promo.applicable_products.map(pid => products.find(p => p.id === pid)?.name).join(', ')}>
+                                      {promo.applicable_products.map(pid => products.find(p => p.id === pid)?.name).filter(Boolean).join(', ')}
+                                  </span>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              ))}
+
               {activeTab === 'purchase_orders' && purchaseOrders.map((order: any) => (
                   <div key={order.id} className="bg-brand-800 border border-brand-700 p-4 rounded-xl flex flex-col gap-3 relative group hover:border-brand-500 transition-colors min-h-[120px] col-span-2 md:col-span-3 lg:col-span-4">
                       {order.status === 'pending' && (
@@ -1534,7 +1621,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
            <div className="bg-brand-800 border border-brand-600 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
               <div className="p-6 border-b border-brand-700 flex justify-between items-center bg-brand-900/50">
                  <h3 className="text-xl font-bold text-white">
-                   {editingItem ? 'Editar' : 'Crear'} {activeTab === 'products' ? 'Producto' : (activeTab === 'units' ? 'Unidad' : (activeTab === 'waste_reasons' ? 'Motivo Merma' : (activeTab === 'courses' ? 'Turno' : (activeTab === 'categories' ? 'Categoría' : (activeTab === 'subcategories' ? 'Subcategoría' : (activeTab === 'suppliers' ? 'Proveedor' : (activeTab === 'purchase_orders' ? 'Pedido de Compra' : 'Elemento')))))))}
+                   {editingItem ? 'Editar' : 'Crear'} {activeTab === 'products' ? 'Producto' : (activeTab === 'units' ? 'Unidad' : (activeTab === 'waste_reasons' ? 'Motivo Merma' : (activeTab === 'courses' ? 'Turno' : (activeTab === 'categories' ? 'Categoría' : (activeTab === 'subcategories' ? 'Subcategoría' : (activeTab === 'suppliers' ? 'Proveedor' : (activeTab === 'purchase_orders' ? 'Pedido de Compra' : (activeTab === 'promotions' ? 'Promoción' : 'Elemento'))))))))}
                  </h3>
                  <button onClick={() => setIsModalOpen(false)}><X className="text-gray-400 hover:text-white" /></button>
               </div>
@@ -1633,11 +1720,11 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                                     </div>
                                     <div className="col-span-3">
                                         <label className="text-[10px] uppercase text-gray-500 font-bold mb-1">Cantidad</label>
-                                        <input type="number" step="0.001" placeholder="1" className="w-full bg-brand-900 border border-brand-600 rounded p-2 text-sm text-white text-center" value={ingredientForm.quantity} onChange={(e) => setIngredientForm({...ingredientForm, quantity: e.target.value})} />
+                                        <input type="number" step="0.001" placeholder="1" className="w-full bg-brand-900 border border-brand-600 rounded p-2 text-sm text-white text-center" value={ingredientForm.quantity || ''} onChange={(e) => setIngredientForm({...ingredientForm, quantity: e.target.value})} />
                                     </div>
                                     <div className="col-span-2">
                                         <label className="text-[10px] uppercase text-gray-500 font-bold mb-1">Rend. (%)</label>
-                                        <input type="number" step="1" min="1" max="100" placeholder="100" className="w-full bg-brand-900 border border-brand-600 rounded p-2 text-sm text-white text-center" value={ingredientForm.yieldPercentage} onChange={(e) => setIngredientForm({...ingredientForm, yieldPercentage: e.target.value})} />
+                                        <input type="number" step="1" min="1" max="100" placeholder="100" className="w-full bg-brand-900 border border-brand-600 rounded p-2 text-sm text-white text-center" value={ingredientForm.yieldPercentage || ''} onChange={(e) => setIngredientForm({...ingredientForm, yieldPercentage: e.target.value})} />
                                     </div>
                                     <div className="col-span-2">
                                         <button type="button" onClick={handleAddIngredient} disabled={!ingredientForm.productId || !ingredientForm.quantity || parseFloat(ingredientForm.quantity) <= 0} className="w-full bg-brand-accent hover:bg-brand-accentHover disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded font-bold flex items-center justify-center transition-colors"><Plus size={18} /></button>
@@ -1894,6 +1981,91 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                                 <button type="button" onClick={() => setPurchaseOrderForm({...purchaseOrderForm, items: [...purchaseOrderForm.items, { product_id: '', quantity: 1, cost_price: 0 }]})} className="text-brand-accent hover:text-brand-accentHover text-sm font-bold flex items-center gap-1 mt-2">
                                     <Plus size={16} /> Añadir Artículo
                                 </button>
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'promotions' && (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Nombre de la Promoción</label>
+                                <input required type="text" className="w-full bg-brand-900 border border-brand-600 rounded-lg p-3 text-white" placeholder="Ej. Happy Hour" value={promotionForm.name} onChange={e => setPromotionForm({...promotionForm, name: e.target.value})} />
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Tipo de Descuento</label>
+                                    <select className="w-full bg-brand-900 border border-brand-600 rounded-lg p-3 text-white" value={promotionForm.discount_type} onChange={e => setPromotionForm({...promotionForm, discount_type: e.target.value as any})}>
+                                        <option value="percentage">Porcentaje (%)</option>
+                                        <option value="fixed_amount">Cantidad Fija (€)</option>
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Valor del Descuento</label>
+                                    <input required type="number" min="0" step="0.01" className="w-full bg-brand-900 border border-brand-600 rounded-lg p-3 text-white" value={promotionForm.discount_value} onChange={e => setPromotionForm({...promotionForm, discount_value: parseFloat(e.target.value) || 0})} />
+                                </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Hora de Inicio</label>
+                                    <input required type="time" className="w-full bg-brand-900 border border-brand-600 rounded-lg p-3 text-white" value={promotionForm.start_time} onChange={e => setPromotionForm({...promotionForm, start_time: e.target.value})} />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Hora de Fin</label>
+                                    <input required type="time" className="w-full bg-brand-900 border border-brand-600 rounded-lg p-3 text-white" value={promotionForm.end_time} onChange={e => setPromotionForm({...promotionForm, end_time: e.target.value})} />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Días de la Semana</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day, index) => (
+                                        <label key={index} className="flex items-center gap-1 text-sm text-gray-300 cursor-pointer bg-brand-900 p-2 rounded-lg border border-brand-600">
+                                            <input type="checkbox" checked={promotionForm.days_of_week?.includes(index)} onChange={e => {
+                                                const newDays = e.target.checked 
+                                                    ? [...(promotionForm.days_of_week || []), index]
+                                                    : (promotionForm.days_of_week || []).filter(d => d !== index);
+                                                setPromotionForm({...promotionForm, days_of_week: newDays});
+                                            }} className="rounded border-gray-600 text-brand-accent focus:ring-brand-accent bg-brand-800" />
+                                            {day}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Categorías Aplicables</label>
+                                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto bg-brand-900 p-2 rounded-lg border border-brand-600">
+                                    {categories.map(cat => (
+                                        <label key={cat.id} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer p-1 hover:bg-brand-800 rounded">
+                                            <input type="checkbox" checked={promotionForm.applicable_categories?.includes(cat.id)} onChange={e => {
+                                                const newCats = e.target.checked
+                                                    ? [...(promotionForm.applicable_categories || []), cat.id]
+                                                    : (promotionForm.applicable_categories || []).filter(c => c !== cat.id);
+                                                setPromotionForm({...promotionForm, applicable_categories: newCats});
+                                            }} className="rounded border-gray-600 text-brand-accent focus:ring-brand-accent bg-brand-800" />
+                                            {cat.name}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Productos Específicos (Opcional)</label>
+                                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto bg-brand-900 p-2 rounded-lg border border-brand-600">
+                                    {products.map(prod => (
+                                        <label key={prod.id} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer p-1 hover:bg-brand-800 rounded">
+                                            <input type="checkbox" checked={promotionForm.applicable_products?.includes(prod.id)} onChange={e => {
+                                                const newProds = e.target.checked
+                                                    ? [...(promotionForm.applicable_products || []), prod.id]
+                                                    : (promotionForm.applicable_products || []).filter(p => p !== prod.id);
+                                                setPromotionForm({...promotionForm, applicable_products: newProds});
+                                            }} className="rounded border-gray-600 text-brand-accent focus:ring-brand-accent bg-brand-800" />
+                                            {prod.name}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <label className="flex items-center gap-2 text-sm font-bold text-white cursor-pointer">
+                                    <input type="checkbox" checked={promotionForm.is_active} onChange={e => setPromotionForm({...promotionForm, is_active: e.target.checked})} className="rounded border-gray-600 text-brand-accent focus:ring-brand-accent bg-brand-800 w-5 h-5" />
+                                    Promoción Activa
+                                </label>
                             </div>
                         </div>
                     )}

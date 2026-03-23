@@ -668,3 +668,18 @@ export const deleteUnit = async (id: string) => {
     await supabase.from('units_of_measure').delete().eq('id', id);
     await db.units.delete(id);
 };
+
+// --- PROMOTIONS ---
+export const getPromotions = async (): Promise<any[]> => {
+    return await db.promotions.toArray();
+};
+
+export const savePromotion = async (promotion: any): Promise<void> => {
+    const id = promotion.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+    const promoToSave = { ...promotion, id: String(id) };
+    await db.promotions.put(promoToSave);
+};
+
+export const deletePromotion = async (id: string): Promise<void> => {
+    await db.promotions.delete(id);
+};

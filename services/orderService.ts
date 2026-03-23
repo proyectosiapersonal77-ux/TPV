@@ -329,30 +329,34 @@ export const fireCourse = async (orderId: string, course: string): Promise<void>
 };
 
 // Close/Pay Order
-export const closeOrder = async (orderId: string, paymentMethod: 'cash' | 'card' | 'other' = 'cash'): Promise<void> => {
+export const closeOrder = async (orderId: string, paymentMethod: 'cash' | 'card' | 'other' = 'cash', finalTotal?: number): Promise<void> => {
     const closedAt = new Date().toISOString();
     
+    const updateData: any = {
+        status: 'paid',
+        closed_at: closedAt,
+        payment_method: paymentMethod
+    };
+    if (finalTotal !== undefined) {
+        updateData.total = finalTotal;
+    }
+
     try {
-        await db.orders.update(orderId, { 
-            status: 'paid',
-            closed_at: closedAt,
-            payment_method: paymentMethod
-        });
+        await db.orders.update(orderId, updateData);
     } catch (e) {
         await db.orders.put({
             id: orderId,
             status: 'paid',
             created_at: closedAt,
             table_id: 'unknown',
-            payment_method: paymentMethod
+            payment_method: paymentMethod,
+            ...(finalTotal !== undefined ? { total: finalTotal } : {})
         });
     }
 
     await queueChange('orders', 'update', { 
         id: orderId, 
-        status: 'paid',
-        closed_at: closedAt,
-        payment_method: paymentMethod
+        ...updateData
     });
 };
 

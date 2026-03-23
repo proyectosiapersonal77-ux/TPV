@@ -26,15 +26,17 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   const queryClient = useQueryClient();
   const [processing, setProcessing] = useState(false); 
   const [error, setError] = useState<string | null>(null);
+  const [manualDiscount, setManualDiscount] = useState<{type: 'percentage' | 'fixed_amount', value: number} | null>(null);
   
   // Zustand Cart Store
-  const { items: cart, addItem, removeItem, updateQuantity, clearCart, total: cartTotal, activeTableId, setActiveTable } = useCartStore();
+  const { items: cart, addItem, removeItem, updateQuantity, clearCart, activeTableId, setActiveTable } = useCartStore();
 
   // Handle Switching Tables logic
   useEffect(() => {
     if (activeTableId !== table.id) {
         clearCart();
         setActiveTable(table.id);
+        setManualDiscount(null);
     }
   }, [table.id]);
 
@@ -45,6 +47,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   const { data: tables = [] } = useQuery({ queryKey: ['tables'], queryFn: TableService.getAllTables });
   const { data: zones = [] } = useQuery({ queryKey: ['zones'], queryFn: ZoneService.getAllZones });
   const { data: courses = [] } = useQuery({ queryKey: ['courses'], queryFn: InventoryService.getAllCourses });
+  const { data: promotions = [] } = useQuery({ queryKey: ['promotions'], queryFn: InventoryService.getPromotions });
   const { data: currentOrder, refetch: refetchOrder } = useQuery({ 
       queryKey: ['activeOrder', table.id], 
       queryFn: () => OrderService.getActiveOrderForTable(table.id),
@@ -66,6 +69,9 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   
   // Payment Logic State
   const [paymentMode, setPaymentMode] = useState<'full' | 'items' | 'diners' | 'manual'>('full');
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
+  const [discountInput, setDiscountInput] = useState('');
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed_amount'>('percentage');
   
   // Selections
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
@@ -148,9 +154,106 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
       });
   }, [activeProducts, searchTerm, activeCategory, activeSubcategory]);
 
+  const getTicketTotals = () => {
+      let subtotal = 0;
+      let discountTotal = 0;
+      const appliedPromotionsMap: Record<string, number> = {};
+
+      const now = new Date();
+      const currentDay = now.getDay();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+
+      // Filter active promotions for current time
+      const activePromos = promotions.filter(p => {
+          if (!p.is_active) return false;
+          if (!p.days_of_week.includes(currentDay)) return false;
+          if (currentTimeStr < p.start_time || currentTimeStr > p.end_time) return false;
+          return true;
+      });
+
+      // Combine db items and cart items
+      const allItems = [
+          ...(currentOrder?.items || []).map((item: any) => {
+              const product = activeProducts.find(p => p.id === item.product_id);
+              return {
+                  product: product || { category_id: '' },
+                  price: Number(item.price),
+                  quantity: item.quantity
+              };
+          }),
+          ...cart.map(item => ({
+              product: item.product,
+              price: item.price,
+              quantity: item.quantity
+          }))
+      ];
+
+      allItems.forEach(item => {
+          const itemTotal = item.price * item.quantity;
+          subtotal += itemTotal;
+
+          let bestDiscount = 0;
+          let bestPromoName = '';
+
+          activePromos.forEach(promo => {
+              const appliesToCategory = promo.applicable_categories?.includes(item.product.category_id);
+              const appliesToProduct = promo.applicable_products?.includes(item.product.id);
+              
+              if (appliesToCategory || appliesToProduct) {
+                  let discount = 0;
+                  if (promo.discount_type === 'percentage') {
+                      discount = itemTotal * (promo.discount_value / 100);
+                  } else if (promo.discount_type === 'fixed_amount') {
+                      discount = promo.discount_value * item.quantity;
+                      if (discount > itemTotal) discount = itemTotal;
+                  }
+
+                  if (discount > bestDiscount) {
+                      bestDiscount = discount;
+                      bestPromoName = promo.name;
+                  }
+              }
+          });
+
+          if (bestDiscount > 0) {
+              discountTotal += bestDiscount;
+              appliedPromotionsMap[bestPromoName] = (appliedPromotionsMap[bestPromoName] || 0) + bestDiscount;
+          }
+      });
+
+      const appliedPromotions = Object.entries(appliedPromotionsMap).map(([name, amount]) => ({ name, amount }));
+
+      let total = subtotal - discountTotal;
+
+      if (manualDiscount) {
+          let manualDiscountAmount = 0;
+          if (manualDiscount.type === 'percentage') {
+              manualDiscountAmount = total * (manualDiscount.value / 100);
+          } else {
+              manualDiscountAmount = manualDiscount.value;
+          }
+          
+          if (manualDiscountAmount > total) {
+              manualDiscountAmount = total;
+          }
+          
+          discountTotal += manualDiscountAmount;
+          total -= manualDiscountAmount;
+          appliedPromotions.push({ name: 'Descuento Manual', amount: manualDiscountAmount });
+      }
+
+      return {
+          subtotal,
+          discountTotal,
+          total,
+          appliedPromotions
+      };
+  };
+
   const calculateTotal = () => {
-      const dbTotal = currentOrder?.items?.reduce((acc: number, item: any) => acc + (Number(item.price) * item.quantity), 0) || 0;
-      return cartTotal() + dbTotal;
+      return getTicketTotals().total;
   };
 
   // --- API ACTIONS ---
@@ -226,7 +329,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                   // Don't block payment if printing fails
               }
           }
-          await OrderService.closeOrder(currentOrder.id, method);
+          await OrderService.closeOrder(currentOrder.id, method, calculateTotal());
           queryClient.invalidateQueries({ queryKey: ['activeOrder'] });
           setPaymentModalOpen(false);
           onBack(); 
@@ -257,6 +360,16 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
               ticketContent += `${qty}x ${name} ${price}E\n`;
           });
           
+          const { discountTotal, appliedPromotions } = getTicketTotals();
+          if (discountTotal > 0) {
+              ticketContent += `--------------------------------\n`;
+              appliedPromotions.forEach(promo => {
+                  const name = promo.name.substring(0, 20).padEnd(20);
+                  const amount = `-${promo.amount.toFixed(2)}`.padStart(7);
+                  ticketContent += `DESC: ${name} ${amount}E\n`;
+              });
+          }
+
           ticketContent += `--------------------------------\n`;
           ticketContent += `TOTAL:          ${calculateTotal().toFixed(2).padStart(10)}E\n`;
           
@@ -384,9 +497,70 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
       const [submitting, setSubmitting] = useState(false);
 
       const items = order.items || [];
-      const selectedTotal = items
-        .filter(i => selectedItems.has(i.id))
-        .reduce((acc, i) => acc + (i.price * i.quantity), 0);
+      const selectedItemsList = items.filter(i => selectedItems.has(i.id));
+      
+      let selectedTotal = 0;
+      let discountTotal = 0;
+      
+      const now = new Date();
+      const currentDay = now.getDay();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+
+      const activePromos = promotions.filter(p => {
+          if (!p.is_active) return false;
+          if (!p.days_of_week.includes(currentDay)) return false;
+          if (currentTimeStr < p.start_time || currentTimeStr > p.end_time) return false;
+          return true;
+      });
+
+      selectedItemsList.forEach(item => {
+          const product = activeProducts.find(p => p.id === item.product_id);
+          const itemTotal = item.price * item.quantity;
+          selectedTotal += itemTotal;
+          
+          if (product) {
+              let bestDiscount = 0;
+              activePromos.forEach(promo => {
+                  const appliesToCategory = promo.applicable_categories?.includes(product.category_id);
+                  const appliesToProduct = promo.applicable_products?.includes(product.id);
+                  
+                  if (appliesToCategory || appliesToProduct) {
+                      let discount = 0;
+                      if (promo.discount_type === 'percentage') {
+                          discount = itemTotal * (promo.discount_value / 100);
+                      } else if (promo.discount_type === 'fixed_amount') {
+                          discount = promo.discount_value * item.quantity;
+                          if (discount > itemTotal) discount = itemTotal;
+                      }
+                      if (discount > bestDiscount) bestDiscount = discount;
+                  }
+              });
+              discountTotal += bestDiscount;
+          }
+      });
+      
+      let finalSelectedTotal = selectedTotal - discountTotal;
+      let appliedManualDiscountAmount = 0;
+
+      if (manualDiscount) {
+          if (manualDiscount.type === 'percentage') {
+              appliedManualDiscountAmount = finalSelectedTotal * (manualDiscount.value / 100);
+          } else {
+              // Proportional fixed discount based on the selected items vs total items
+              const totalItemsInOrder = items.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+              const proportion = totalItemsInOrder > 0 ? selectedTotal / totalItemsInOrder : 0;
+              appliedManualDiscountAmount = manualDiscount.value * proportion;
+          }
+          
+          if (appliedManualDiscountAmount > finalSelectedTotal) {
+              appliedManualDiscountAmount = finalSelectedTotal;
+          }
+          
+          discountTotal += appliedManualDiscountAmount;
+          finalSelectedTotal -= appliedManualDiscountAmount;
+      }
 
       const toggleItem = (id: string) => {
           const newSet = new Set(selectedItems);
@@ -400,7 +574,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
           setSubmitting(true);
           try {
               if (method === 'card' && redsysService.getConfig().enabled) {
-                  const result = await redsysService.sendPayment(selectedTotal, order.id);
+                  const result = await redsysService.sendPayment(finalSelectedTotal, order.id);
                   if (!result.success) {
                       throw new Error(result.message);
                   }
@@ -410,8 +584,15 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
               // 1. Move items to new order
               const newOrderId = await OrderService.splitOrder(order, itemsToMove, employeeId);
               // 2. Pay that new order
-              await OrderService.closeOrder(newOrderId, method);
+              await OrderService.closeOrder(newOrderId, method, finalSelectedTotal);
               
+              if (manualDiscount && manualDiscount.type === 'fixed_amount') {
+                  setManualDiscount({
+                      ...manualDiscount,
+                      value: Math.max(0, manualDiscount.value - appliedManualDiscountAmount)
+                  });
+              }
+
               queryClient.invalidateQueries();
               
               if (selectedItems.size === items.length) {
@@ -456,9 +637,17 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                       );
                   })}
               </div>
-              <div className="flex justify-between items-center bg-brand-900 p-4 rounded-xl border border-brand-700">
-                  <span className="text-gray-400 text-sm">Total Seleccionado</span>
-                  <span className="text-2xl font-bold text-brand-accent">{selectedTotal.toFixed(2)}€</span>
+              <div className="flex flex-col bg-brand-900 p-4 rounded-xl border border-brand-700">
+                  {discountTotal > 0 && (
+                      <div className="flex justify-between items-center mb-1 text-green-400">
+                          <span className="text-sm">Descuentos</span>
+                          <span className="text-sm font-bold">-{discountTotal.toFixed(2)}€</span>
+                      </div>
+                  )}
+                  <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Total Seleccionado</span>
+                      <span className="text-2xl font-bold text-brand-accent">{finalSelectedTotal.toFixed(2)}€</span>
+                  </div>
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
                   <button 
@@ -467,7 +656,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                     className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg"
                   >
                       {submitting ? <Loader2 className="animate-spin" /> : <Banknote size={24} />}
-                      EFECTIVO ({selectedTotal.toFixed(2)}€)
+                      EFECTIVO ({finalSelectedTotal.toFixed(2)}€)
                   </button>
                   <button 
                     onClick={() => handleSplitAndPay('card')}
@@ -475,7 +664,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                     className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg"
                   >
                       {submitting ? <Loader2 className="animate-spin" /> : <CreditCard size={24} />}
-                      TARJETA ({selectedTotal.toFixed(2)}€)
+                      TARJETA ({finalSelectedTotal.toFixed(2)}€)
                   </button>
               </div>
           </div>
@@ -535,7 +724,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                           console.error(printErr);
                       }
                   }
-                  await OrderService.closeOrder(currentOrder!.id, method);
+                  await OrderService.closeOrder(currentOrder!.id, method, calculateTotal());
                   queryClient.invalidateQueries({ queryKey: ['activeOrder'] });
                   setPaymentModalOpen(false);
                   onBack();
@@ -946,6 +1135,29 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
         </div>
 
         <div className="p-4 bg-brand-900 border-t border-brand-700 shrink-0 pb-safe">
+            <div className="flex justify-between items-center mb-2">
+                <button 
+                    onClick={() => setIsDiscountModalOpen(true)}
+                    className="text-brand-accent hover:text-brand-accentHover text-sm font-bold flex items-center gap-1 transition-colors"
+                >
+                    <Tag size={16} />
+                    {manualDiscount ? 'Modificar Descuento' : 'Aplicar Descuento'}
+                </button>
+                {manualDiscount && (
+                    <button 
+                        onClick={() => setManualDiscount(null)}
+                        className="text-red-400 hover:text-red-300 text-sm font-bold flex items-center gap-1 transition-colors"
+                    >
+                        <X size={16} /> Quitar
+                    </button>
+                )}
+            </div>
+            {getTicketTotals().discountTotal > 0 && (
+                <div className="flex justify-between items-end mb-2 text-green-400">
+                    <span className="text-sm font-medium">Descuentos</span>
+                    <span className="text-lg font-bold">-{getTicketTotals().discountTotal.toFixed(2)}€</span>
+                </div>
+            )}
             <div className="flex justify-between items-end mb-4">
                 <span className="text-gray-400 text-sm font-medium">Total</span>
                 <span className="text-3xl font-bold text-white">{calculateTotal().toFixed(2)}€</span>
@@ -1274,6 +1486,79 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
 
         {/* === MOVE ORDER MODAL === */}
         {moveOrderModalOpen && <MoveOrderModal onClose={() => setMoveOrderModalOpen(false)} />}
+        {/* === DISCOUNT MODAL === */}
+        {isDiscountModalOpen && (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                <div className="bg-brand-800 border border-brand-600 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-brand-700 flex justify-between items-center bg-brand-900/50">
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                            <Tag className="text-brand-accent" />
+                            Aplicar Descuento Manual
+                        </h3>
+                        <button onClick={() => setIsDiscountModalOpen(false)} className="text-gray-400 hover:text-white"><X size={24}/></button>
+                    </div>
+                    <div className="p-6 flex flex-col gap-4">
+                        <div className="flex gap-4">
+                            <button 
+                                onClick={() => setDiscountType('percentage')}
+                                className={`flex-1 py-3 rounded-lg font-bold text-sm transition-colors ${discountType === 'percentage' ? 'bg-brand-accent text-white' : 'bg-brand-900 text-gray-400 border border-brand-700 hover:text-white'}`}
+                            >
+                                Porcentaje (%)
+                            </button>
+                            <button 
+                                onClick={() => setDiscountType('fixed_amount')}
+                                className={`flex-1 py-3 rounded-lg font-bold text-sm transition-colors ${discountType === 'fixed_amount' ? 'bg-brand-accent text-white' : 'bg-brand-900 text-gray-400 border border-brand-700 hover:text-white'}`}
+                            >
+                                Cantidad Fija (€)
+                            </button>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Valor del Descuento</label>
+                            <div className="relative">
+                                <input 
+                                    type="number" 
+                                    min="0" 
+                                    step="0.01" 
+                                    value={discountInput}
+                                    onChange={(e) => setDiscountInput(e.target.value)}
+                                    className="w-full bg-brand-900 border border-brand-600 rounded-lg p-4 text-2xl font-bold text-white text-center focus:ring-2 focus:ring-brand-accent outline-none"
+                                    placeholder="0.00"
+                                    autoFocus
+                                />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xl">
+                                    {discountType === 'percentage' ? '%' : '€'}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                            {[10, 20, 50].map(val => (
+                                <button 
+                                    key={val}
+                                    onClick={() => setDiscountInput(val.toString())}
+                                    className="bg-brand-900 border border-brand-700 hover:bg-brand-700 text-white py-2 rounded-lg font-bold transition-colors"
+                                >
+                                    {val}{discountType === 'percentage' ? '%' : '€'}
+                                </button>
+                            ))}
+                        </div>
+                        <button 
+                            onClick={() => {
+                                const val = parseFloat(discountInput);
+                                if (!isNaN(val) && val > 0) {
+                                    setManualDiscount({ type: discountType, value: val });
+                                    setIsDiscountModalOpen(false);
+                                }
+                            }}
+                            disabled={!discountInput || parseFloat(discountInput) <= 0}
+                            className="w-full mt-4 bg-green-600 hover:bg-green-500 disabled:bg-brand-800 disabled:text-gray-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-all"
+                        >
+                            Aplicar Descuento
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
     </div>
   );
 };

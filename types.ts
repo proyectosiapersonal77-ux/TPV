@@ -293,5 +293,19 @@ export interface CashMovement {
     created_at: string;
 }
 
+export interface Promotion {
+  id: string;
+  name: string;
+  discount_type: 'percentage' | 'fixed_amount';
+  discount_value: number;
+  start_time: string; // HH:mm
+  end_time: string; // HH:mm
+  days_of_week: number[]; // 0-6 (0 = Sunday)
+  applicable_categories: string[];
+  applicable_products?: string[];
+  is_active: boolean;
+  created_at?: string;
+}
+
 // --- APP VIEW STATE ---
 export type ViewState = 'login' | 'dashboard' | 'config' | 'tables' | 'inventory' | 'pos' | 'kitchen' | 'cash_register' | 'analytics';
