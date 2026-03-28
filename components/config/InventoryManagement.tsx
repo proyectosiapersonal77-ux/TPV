@@ -1220,9 +1220,16 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                      <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 bg-brand-900 border border-brand-700 text-gray-300 rounded-lg hover:text-white hover:bg-brand-800 transition-colors text-sm font-medium" title="Exportar CSV">
                         <Download size={16} /> Exportar
                      </button>
-                     <button onClick={handleImportClick} disabled={isImporting} className="flex items-center gap-2 px-3 py-2 bg-brand-900 border border-brand-700 text-gray-300 rounded-lg hover:text-white hover:bg-brand-800 transition-colors text-sm font-medium disabled:opacity-50" title="Importar CSV">
-                        {isImporting ? <Loader2 size={16} className="animate-spin"/> : <Upload size={16} />} Importar
-                     </button>
+                     <div className="relative group">
+                         <button onClick={handleImportClick} disabled={isImporting} className="flex items-center gap-2 px-3 py-2 bg-brand-900 border border-brand-700 text-gray-300 rounded-lg hover:text-white hover:bg-brand-800 transition-colors text-sm font-medium disabled:opacity-50" title="Importar CSV">
+                            {isImporting ? <Loader2 size={16} className="animate-spin"/> : <Upload size={16} />} Importar
+                         </button>
+                         <div className="absolute right-0 top-full mt-2 w-72 bg-brand-900 border border-brand-700 p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-xs text-gray-300 pointer-events-none">
+                             <p className="font-bold text-white mb-1">Formato CSV esperado:</p>
+                             <p className="mb-2">Nombre, Categoria, Subcategoria, Proveedor, Coste, PVP, Stock, Minimo, IVA, Unidad, Codigo de Barras, Compuesto (SI/NO), Activo (SI/NO)</p>
+                             <p className="text-gray-400 italic">Nota: La primera fila se ignora (cabeceras). También se soporta el formato antiguo de 8 columnas.</p>
+                         </div>
+                     </div>
                  </div>
              )}
          </div>
@@ -1340,7 +1347,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                                   {promo.is_active ? 'Activa' : 'Inactiva'}
                               </span>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right mt-6">
                               <span className="text-2xl font-black text-brand-accent">
                                   {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : `${promo.discount_value.toFixed(2)}€`}
                               </span>

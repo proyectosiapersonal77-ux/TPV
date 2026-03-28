@@ -274,17 +274,22 @@ export const bulkUpdateProductCategory = async (ids: string[], categoryId: strin
 
 export const downloadInventoryCSV = async () => {
     const products = await db.products.toArray(); // Read Local
-    const headers = ['Nombre', 'Categoria', 'Coste', 'PVP', 'Stock', 'Minimo', 'IVA', 'Unidad'];
+    const headers = ['Nombre', 'Categoria', 'Subcategoria', 'Proveedor', 'Coste', 'PVP', 'Stock', 'Minimo', 'IVA', 'Unidad', 'Codigo de Barras', 'Compuesto', 'Activo'];
     // ... csv generation logic ...
     const rows = products.map(p => [
         `"${p.name.replace(/"/g, '""')}"`,
         `"${p.product_categories?.name || ''}"`,
+        `"${p.product_subcategories?.name || ''}"`,
+        `"${p.suppliers?.name || ''}"`,
         p.cost_price,
         p.selling_price,
         p.stock_current,
         p.stock_min,
         p.tax_rate,
-        p.stock_unit
+        `"${p.stock_unit || ''}"`,
+        `"${p.barcode || ''}"`,
+        p.is_compound ? 'SI' : 'NO',
+        p.active ? 'SI' : 'NO'
     ]);
     const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -309,6 +314,8 @@ export const processInventoryImport = async (file: File, currentUserId?: string)
                 
                 const dbProducts = await db.products.toArray();
                 const existingCategories = await db.categories.toArray();
+                const existingSubcategories = await db.subcategories.toArray();
+                const existingSuppliers = await db.suppliers.toArray();
 
                 const productMap = new Map<string, Product>();
                 dbProducts.forEach(p => productMap.set(p.name.trim().toLowerCase(), p));
@@ -325,48 +332,90 @@ export const processInventoryImport = async (file: File, currentUserId?: string)
                     const nameClean = cols[0]?.trim();
                     if (!nameClean) { errorCount++; continue; }
                     const nameKey = nameClean.toLowerCase();
-                    const catName = cols[1];
-                    const cost = parseFloat(cols[2]) || 0;
-                    const price = parseFloat(cols[3]) || 0;
-                    const stock = parseFloat(cols[4]) || 0;
-                    const min = parseFloat(cols[5]) || 0;
-                    const tax = parseFloat(cols[6]) || 10;
-                    const unit = cols[7] || 'u';
+                    
+                    let catName, subcatName, supplierName, cost, price, stock, min, tax, unit, barcode, isCompound, isActive;
+
+                    if (cols.length >= 13) {
+                        // New format
+                        catName = cols[1];
+                        subcatName = cols[2];
+                        supplierName = cols[3];
+                        cost = parseFloat(cols[4]) || 0;
+                        price = parseFloat(cols[5]) || 0;
+                        stock = parseFloat(cols[6]) || 0;
+                        min = parseFloat(cols[7]) || 0;
+                        tax = parseFloat(cols[8]) || 10;
+                        unit = cols[9] || 'u';
+                        barcode = cols[10] || '';
+                        isCompound = cols[11]?.toUpperCase() === 'SI';
+                        isActive = cols[12] ? cols[12].toUpperCase() === 'SI' : true;
+                    } else {
+                        // Old format: ['Nombre', 'Categoria', 'Coste', 'PVP', 'Stock', 'Minimo', 'IVA', 'Unidad']
+                        catName = cols[1];
+                        subcatName = '';
+                        supplierName = '';
+                        cost = parseFloat(cols[2]) || 0;
+                        price = parseFloat(cols[3]) || 0;
+                        stock = parseFloat(cols[4]) || 0;
+                        min = parseFloat(cols[5]) || 0;
+                        tax = parseFloat(cols[6]) || 10;
+                        unit = cols[7] || 'u';
+                        barcode = '';
+                        isCompound = false;
+                        isActive = true;
+                    }
 
                     const category = existingCategories.find(c => c.name.toLowerCase() === catName?.trim().toLowerCase());
                     const categoryId = category ? category.id : null;
+
+                    const subcategory = existingSubcategories.find(c => c.name.toLowerCase() === subcatName?.trim().toLowerCase());
+                    const subcategoryId = subcategory ? subcategory.id : null;
+
+                    const supplier = existingSuppliers.find(c => c.name.toLowerCase() === supplierName?.trim().toLowerCase());
+                    const supplierId = supplier ? supplier.id : null;
 
                     const existingProduct = productMap.get(nameKey);
 
                     if (existingProduct) {
                         // Update
+                        const updates: Partial<Product> = {
+                            cost_price: cost > 0 ? cost : existingProduct.cost_price,
+                            selling_price: price > 0 ? price : existingProduct.selling_price,
+                            category_id: categoryId || existingProduct.category_id,
+                            subcategory_id: subcategoryId || existingProduct.subcategory_id,
+                            supplier_id: supplierId || existingProduct.supplier_id,
+                            stock_min: min > 0 ? min : existingProduct.stock_min,
+                            tax_rate: tax > 0 ? tax : existingProduct.tax_rate,
+                            stock_unit: unit as StockUnit,
+                            barcode: barcode || existingProduct.barcode,
+                            is_compound: isCompound,
+                            active: isActive
+                        };
+
                         if (stock > 0) {
                             const newTotalStock = existingProduct.stock_current + stock;
-                            await updateProduct(existingProduct.id, {
-                                stock_current: newTotalStock,
-                                cost_price: cost > 0 ? cost : existingProduct.cost_price,
-                                selling_price: price > 0 ? price : existingProduct.selling_price
-                            }, currentUserId);
+                            updates.stock_current = newTotalStock;
+                            await updateProduct(existingProduct.id, updates, currentUserId);
                             existingProduct.stock_current = newTotalStock; // Update map
                         } else {
-                             await updateProduct(existingProduct.id, {
-                                cost_price: cost > 0 ? cost : existingProduct.cost_price,
-                                selling_price: price > 0 ? price : existingProduct.selling_price
-                            });
+                             await updateProduct(existingProduct.id, updates);
                         }
                     } else {
                         // Create
                         await createProduct({
                             name: nameClean,
                             category_id: categoryId,
+                            subcategory_id: subcategoryId,
+                            supplier_id: supplierId,
                             cost_price: cost,
                             selling_price: price,
                             stock_current: stock,
                             stock_min: min,
                             tax_rate: tax,
-                            stock_unit: unit,
-                            active: true,
-                            is_compound: false 
+                            stock_unit: unit as StockUnit,
+                            barcode: barcode,
+                            active: isActive,
+                            is_compound: isCompound 
                         });
                         // Note: createProduct in this file does supabase call. 
                     }
