@@ -45,7 +45,11 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
         const product = products.find(p => p.id === productId);
         if (!product) return 'none';
         const category = categories.find(c => c.id === product.category_id);
-        return category?.kds_station || 'none';
+        
+        if (category?.name.toLowerCase() === 'bebidas') {
+            return 'bar';
+        }
+        return 'kitchen';
     };
 
     const handleItemAction = async (item: OrderItem) => {

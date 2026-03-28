@@ -8,14 +8,14 @@ export interface CartItem {
     price: number;
     variant?: ProductVariant;
     notes?: string;
-    course?: 'entrantes' | 'segundos' | 'postres' | 'bebidas' | 'otros';
+    course?: string;
 }
 
 interface CartState {
     items: CartItem[];
     activeTableId: string | null;
     
-    addItem: (product: Product, variant?: ProductVariant, quantity?: number, notes?: string, extraPrice?: number, course?: 'entrantes' | 'segundos' | 'postres' | 'bebidas' | 'otros') => void;
+    addItem: (product: Product, variant?: ProductVariant, quantity?: number, notes?: string, extraPrice?: number, course?: string) => void;
     removeItem: (index: number) => void;
     updateQuantity: (index: number, delta: number) => void;
     clearCart: () => void;

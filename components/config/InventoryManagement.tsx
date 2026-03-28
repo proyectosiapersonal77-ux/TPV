@@ -1313,7 +1313,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
               <button title="Alérgenos" onClick={() => setActiveTab('allergens')} className={`p-2 rounded-md transition-all ${activeTab === 'allergens' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Wheat size={20} /></button>
               <button title="Unidades de Medida" onClick={() => setActiveTab('units')} className={`p-2 rounded-md transition-all ${activeTab === 'units' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Scale size={20} /></button>
               <button title="Tipos de Merma" onClick={() => setActiveTab('waste_reasons')} className={`p-2 rounded-md transition-all ${activeTab === 'waste_reasons' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Ban size={20} /></button>
-              <button title="Turnos (Marchar)" onClick={() => setActiveTab('courses')} className={`p-2 rounded-md transition-all ${activeTab === 'courses' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Clock size={20} /></button>
               <button title="Promociones" onClick={() => setActiveTab('promotions')} className={`p-2 rounded-md transition-all ${activeTab === 'promotions' ? 'bg-brand-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}><Percent size={20} /></button>
             </div>
             {activeTab === 'products' && (

@@ -46,7 +46,6 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   const { data: products = [], isLoading: loadingProducts } = useQuery({ queryKey: ['products'], queryFn: InventoryService.getAllProducts });
   const { data: tables = [] } = useQuery({ queryKey: ['tables'], queryFn: TableService.getAllTables });
   const { data: zones = [] } = useQuery({ queryKey: ['zones'], queryFn: ZoneService.getAllZones });
-  const { data: courses = [] } = useQuery({ queryKey: ['courses'], queryFn: InventoryService.getAllCourses });
   const { data: promotions = [] } = useQuery({ queryKey: ['promotions'], queryFn: InventoryService.getPromotions });
   const { data: currentOrder, refetch: refetchOrder } = useQuery({ 
       queryKey: ['activeOrder', table.id], 
@@ -75,19 +74,11 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   
   // Selections
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
-  const [currentCourse, setCurrentCourse] = useState<string>('otros');
 
   // Set default category
   useEffect(() => {
     if (categories.length > 0 && activeCategory === 'all' && !activeCategory) setActiveCategory(categories[0].id);
   }, [categories]);
-
-  // Set default course
-  useEffect(() => {
-    if (courses.length > 0 && currentCourse === 'otros') {
-        setCurrentCourse(courses[0].name);
-    }
-  }, [courses]);
 
   // --- CART LOGIC ---
   const handleProductClick = (product: Product) => {
@@ -98,7 +89,9 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
           setVariantModalOpen(true);
           return;
       }
-      addItem(product, undefined, 1, '', 0, currentCourse);
+      const category = categories.find(c => c.id === product.category_id);
+      const courseName = category ? category.name : 'otros';
+      addItem(product, undefined, 1, '', 0, courseName);
   };
 
   // --- BARCODE SCANNER LOGIC ---
@@ -137,7 +130,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
 
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeProducts, currentCourse]); // Added currentCourse to dependency array
+  }, [activeProducts]);
 
   // --- FILTERING ---
   const filteredSubcategories = useMemo(() => {
@@ -1026,9 +1019,8 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                         <AlertCircle size={14} /> Platos Retenidos
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {courses.map(c => c.name).map(course => {
-                            const hasHeld = currentOrder.items?.some((i: any) => i.course === course && i.status === 'held');
-                            if (!hasHeld) return null;
+                        {Array.from(new Set(currentOrder.items?.filter((i: any) => i.status === 'held').map((i: any) => i.course) || [])).map((course: any) => {
+                            if (!course) return null;
                             return (
                                 <button
                                     key={course}
@@ -1285,24 +1277,6 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                  <AdminNavigation onNavigate={onNavigate} currentView="pos" />
              </div>
 
-             {/* Course Selector (Marchar Platos) */}
-             <div className="flex overflow-x-auto border-b border-brand-700 bg-brand-900 p-2 gap-2 shrink-0 items-center">
-                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-2 mr-1">Turno:</span>
-                 {courses.map(course => (
-                     <button
-                         key={course.id}
-                         onClick={() => setCurrentCourse(course.name)}
-                         className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors border ${
-                             currentCourse === course.name 
-                             ? 'bg-orange-600/20 border-orange-500 text-orange-400' 
-                             : 'bg-brand-800 border-brand-700 text-gray-400 hover:bg-brand-700'
-                         }`}
-                     >
-                         {course.name}
-                     </button>
-                 ))}
-             </div>
-
              {/* Products Grid */}
              <div className="flex-1 overflow-y-auto p-3 md:p-4 pb-28 md:pb-4">
                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -1481,9 +1455,9 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                 hasVariants={hasVariants}
                 onClose={() => setVariantModalOpen(false)} 
                 onAdd={(product, variant, notes, extraPrice) => {
-                    // We need to pass notes and extraPrice to addItem
-                    // We'll update useCartStore to handle this
-                    addItem(product, variant, 1, notes, extraPrice, currentCourse);
+                    const category = categories.find(c => c.id === product.category_id);
+                    const courseName = category ? category.name : 'otros';
+                    addItem(product, variant, 1, notes, extraPrice, courseName);
                     setVariantModalOpen(false);
                 }} 
             />;
