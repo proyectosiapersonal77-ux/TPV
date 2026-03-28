@@ -7,6 +7,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAllTables } from '../../services/tableService';
 import AdminNavigation from '../AdminNavigation';
 
+import { useAuthStore } from '../../stores/useAuthStore';
+
 interface KitchenDisplayProps {
     onBack: () => void;
     onNavigate: (view: ViewState) => void;
@@ -14,6 +16,7 @@ interface KitchenDisplayProps {
 
 const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) => {
     const queryClient = useQueryClient();
+    const { user } = useAuthStore();
     const [stationFilter, setStationFilter] = useState<'all' | 'kitchen' | 'bar'>('all');
 
     // Fetch products and categories to map items to stations
@@ -46,6 +49,10 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
     };
 
     const handleItemAction = async (item: OrderItem) => {
+        if (user?.role === 'waiter') {
+            return; // Waiters have read-only access to kitchen display
+        }
+
         let nextStatus: any = 'ready';
         if (item.status === 'pending') nextStatus = 'ready'; 
         if (item.status === 'ready') nextStatus = 'served';
@@ -161,7 +168,7 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                                         {activeItems.map((item: OrderItem) => (
                                             <div 
                                                 key={item.id} 
-                                                className={`p-3 rounded-lg border-l-4 cursor-pointer transition-all hover:bg-gray-700 ${item.status === 'ready' ? 'bg-green-900/20 border-green-500' : 'bg-gray-900 border-gray-600'}`}
+                                                className={`p-3 rounded-lg border-l-4 transition-all ${user?.role === 'waiter' ? 'cursor-default' : 'cursor-pointer hover:bg-gray-700'} ${item.status === 'ready' ? 'bg-green-900/20 border-green-500' : 'bg-gray-900 border-gray-600'}`}
                                                 onClick={() => handleItemAction(item)}
                                             >
                                                 <div className="flex justify-between items-start">
