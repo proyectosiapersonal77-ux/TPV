@@ -54,7 +54,14 @@ const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, 
     const [menuPos, setMenuPos] = useState<{ top: number, right: number, openUpwards: boolean } | null>(null);
 
     useEffect(() => {
-        const closeMenu = () => setMenuPos(null);
+        const closeMenu = (e: MouseEvent | Event) => {
+            // Don't close if clicking inside the menu
+            const target = e.target as HTMLElement;
+            if (target.closest('.action-menu-portal')) {
+                return;
+            }
+            setMenuPos(null);
+        };
         if (menuPos) {
             document.addEventListener('mousedown', closeMenu);
             window.addEventListener('scroll', closeMenu, true);
@@ -182,7 +189,7 @@ const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, 
                     </button>
                     {menuPos && createPortal(
                         <div 
-                            className="fixed w-48 bg-brand-800 border border-brand-600 rounded-lg shadow-xl z-[9999] py-1 overflow-y-auto"
+                            className="action-menu-portal fixed w-48 bg-brand-800 border border-brand-600 rounded-lg shadow-xl z-[9999] py-1 overflow-y-auto"
                             style={{ 
                                 top: menuPos.top,
                                 right: menuPos.right,
