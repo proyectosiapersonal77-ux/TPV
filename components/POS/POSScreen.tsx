@@ -774,7 +774,12 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                         placeholder="0.00"
                         autoFocus
                       />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">€</span>
+                      <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+                          <div className="relative flex items-center">
+                              <span className="text-3xl font-bold opacity-0 font-mono">{amountToPay || '0.00'}</span>
+                              <span className="absolute left-full ml-1 text-gray-500 font-bold text-2xl">€</span>
+                          </div>
+                      </div>
                   </div>
                   {mode === 'diners' && (
                       <p className="text-center text-xs text-gray-500 mt-2">División sugerida: {(remaining / diners).toFixed(2)}€ / pers</p>
@@ -1525,9 +1530,14 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                                     placeholder="0.00"
                                     autoFocus
                                 />
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xl">
-                                    {discountType === 'percentage' ? '%' : '€'}
-                                </span>
+                                <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+                                    <div className="relative flex items-center">
+                                        <span className="text-2xl font-bold opacity-0">{discountInput || '0.00'}</span>
+                                        <span className="absolute left-full ml-1 text-gray-400 font-bold text-xl">
+                                            {discountType === 'percentage' ? '%' : '€'}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="grid grid-cols-3 gap-2 mt-2">
