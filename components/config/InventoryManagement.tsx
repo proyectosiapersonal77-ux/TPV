@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Package, Search, Plus, Edit2, Trash2, Save, X, Filter, 
   TrendingUp, AlertTriangle, CheckCircle, Truck, Tag, DollarSign,
@@ -46,9 +47,24 @@ interface ProductRowData {
     isEditable: (p: Product, f: EditableField) => boolean;
     getStockDisplay: (p: Product) => string;
     getPriceDisplay: (p: Product) => string;
+    getCategoryName: (id: string) => string;
 }
 
 const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, style, data }) => {
+    const [menuPos, setMenuPos] = useState<{ top: number, right: number, openUpwards: boolean } | null>(null);
+
+    useEffect(() => {
+        const closeMenu = () => setMenuPos(null);
+        if (menuPos) {
+            document.addEventListener('mousedown', closeMenu);
+            window.addEventListener('scroll', closeMenu, true);
+        }
+        return () => {
+            document.removeEventListener('mousedown', closeMenu);
+            window.removeEventListener('scroll', closeMenu, true);
+        };
+    }, [menuPos]);
+
     // Safety check: ensure data and items exist
     if (!data || !data.items || !data.items[index]) return null;
 
@@ -57,12 +73,30 @@ const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, 
         selectedIds, toggleSelection, handleStartEdit, editingCell, 
         editValue, setEditValue, handleSaveEdit, handleEditKeyDown,
         onRequestDelete, handleOpenModal, handleOpenWasteModal, handleOpenHistory,
-        isEditable, getStockDisplay, getPriceDisplay
+        isEditable, getStockDisplay, getPriceDisplay, getCategoryName
     } = data;
 
     const isSelected = selectedIds.has(product.id);
     const displayStock = getStockDisplay(product);
     const displayPrice = getPriceDisplay(product);
+
+    const handleToggleMenu = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (menuPos) {
+            setMenuPos(null);
+        } else {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const menuHeight = 200; // approx height of 5 items
+            const openUpwards = spaceBelow < menuHeight && rect.top > menuHeight;
+
+            setMenuPos({
+                top: openUpwards ? rect.top - 4 : rect.bottom + 4,
+                right: window.innerWidth - rect.right,
+                openUpwards
+            });
+        }
+    };
 
     return (
         <div style={style} className={`flex items-center border-b border-brand-700/50 hover:bg-brand-700/30 transition-colors ${isSelected ? 'bg-brand-700/20' : ''}`}>
@@ -78,9 +112,12 @@ const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, 
                 <div className="w-10 h-10 rounded-lg bg-brand-900 border border-brand-700 overflow-hidden shrink-0 flex items-center justify-center">
                     {product.image_url ? <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" /> : <ImageIcon size={16} className="text-brand-700" />}
                 </div>
-                <div className="truncate">
-                    <div className="font-medium text-white truncate">{product.name}</div>
-                    {product.variants && product.variants.length > 0 && <span className="text-[10px] bg-brand-700 text-gray-300 px-1.5 py-0.5 rounded border border-brand-600">{product.variants.length} Var.</span>}
+                <div className="truncate flex flex-col justify-center">
+                    <div className="font-medium text-white truncate leading-tight">{product.name}</div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-gray-400 truncate">{getCategoryName(product.category_id)}</span>
+                        {product.variants && product.variants.length > 0 && <span className="text-[9px] bg-brand-700 text-gray-300 px-1 py-0.5 rounded border border-brand-600 leading-none">{product.variants.length} Var.</span>}
+                    </div>
                 </div>
             </div>
 
@@ -135,12 +172,34 @@ const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, 
             </div>
 
             {/* Actions */}
-            <div className="w-48 text-right p-2 pr-4 flex justify-end gap-2">
-                <button onClick={() => data.handleOpenBarcodeModal(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-green-400 rounded hover:border-green-400 hover:bg-green-500/20" title="Imprimir Etiqueta"><Barcode size={14} /></button>
-                <button onClick={() => handleOpenWasteModal(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-orange-400 rounded hover:border-orange-400 hover:bg-orange-500/20" title="Merma"><TrendingDown size={14} /></button>
-                <button onClick={() => handleOpenHistory(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-purple-400 rounded hover:border-purple-400 hover:bg-purple-500/20" title="Historial"><HistoryIcon size={14} /></button>
-                <button onClick={() => handleOpenModal(product)} className="p-1.5 bg-brand-900 border border-brand-600 text-blue-400 rounded hover:border-blue-400"><Edit2 size={14} /></button>
-                <button onClick={(e) => onRequestDelete(product, 'products', e)} className="p-1.5 bg-brand-900 border border-brand-600 text-red-400 rounded hover:border-red-400 hover:bg-red-500/20"><Trash2 size={14} /></button>
+            <div className="w-16 text-right p-2 pr-4 flex justify-end">
+                <div className="relative">
+                    <button 
+                        onClick={handleToggleMenu} 
+                        className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-brand-700 transition-colors"
+                    >
+                        <MoreHorizontal size={18} />
+                    </button>
+                    {menuPos && createPortal(
+                        <div 
+                            className="fixed w-48 bg-brand-800 border border-brand-600 rounded-lg shadow-xl z-[9999] py-1 overflow-y-auto"
+                            style={{ 
+                                top: menuPos.top,
+                                right: menuPos.right,
+                                transform: menuPos.openUpwards ? 'translateY(-100%)' : 'none',
+                                maxHeight: menuPos.openUpwards ? `${menuPos.top - 8}px` : `${window.innerHeight - menuPos.top - 8}px`
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button onClick={() => { setMenuPos(null); data.handleOpenBarcodeModal(product); }} className="w-full text-left px-4 py-2 text-sm text-green-400 hover:bg-brand-700 flex items-center gap-2"><Barcode size={14} className="shrink-0" /> Imprimir Etiqueta</button>
+                            <button onClick={() => { setMenuPos(null); handleOpenWasteModal(product); }} className="w-full text-left px-4 py-2 text-sm text-orange-400 hover:bg-brand-700 flex items-center gap-2"><TrendingDown size={14} className="shrink-0" /> Merma</button>
+                            <button onClick={() => { setMenuPos(null); handleOpenHistory(product); }} className="w-full text-left px-4 py-2 text-sm text-purple-400 hover:bg-brand-700 flex items-center gap-2"><HistoryIcon size={14} className="shrink-0" /> Historial</button>
+                            <button onClick={() => { setMenuPos(null); handleOpenModal(product); }} className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-brand-700 flex items-center gap-2"><Edit2 size={14} className="shrink-0" /> Editar</button>
+                            <button onClick={(e) => { setMenuPos(null); onRequestDelete(product, 'products', e); }} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-brand-700 flex items-center gap-2"><Trash2 size={14} className="shrink-0" /> Eliminar</button>
+                        </div>,
+                        document.body
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -1190,8 +1249,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
       handleOpenBarcodeModal,
       isEditable,
       getStockDisplay,
-      getPriceDisplay
-  }), [filteredProducts, selectedProductIds, editingCell, editValue]);
+      getPriceDisplay,
+      getCategoryName: (id: string) => categories.find(c => c.id === id)?.name || 'Sin Categoría'
+  }), [filteredProducts, selectedProductIds, editingCell, editValue, categories]);
 
   if (loading) return <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-brand-accent" /></div>;
 
@@ -1286,7 +1346,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                 <div className="w-24 text-right p-4 bg-brand-800">Coste</div>
                 <div className="w-24 text-right p-4 bg-brand-800">PVP</div>
                 <div className="w-20 text-center p-4 bg-brand-800">Stock</div>
-                <div className="w-48 text-right p-4 bg-brand-800">Acciones</div>
+                <div className="w-16 text-right p-4 bg-brand-800">Acciones</div>
              </div>
 
              {/* Virtual List Body */}

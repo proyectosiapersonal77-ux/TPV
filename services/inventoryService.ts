@@ -1,7 +1,7 @@
 import { supabase } from '../Supabase';
 import { db } from '../db';
 import { queueChange } from './syncService';
-import { Product, ProductCategory, ProductSubcategory, Supplier, Allergen, ProductVariant, ProductIngredient, UnitOfMeasure, StockMovement, WasteReason, ProductModifier, Course } from '../types';
+import { Product, ProductCategory, ProductSubcategory, Supplier, Allergen, ProductVariant, ProductIngredient, UnitOfMeasure, StockMovement, WasteReason, ProductModifier, Course, StockUnit } from '../types';
 
 // --- MODIFIER HELPERS ---
 export const getProductModifiers = (product: Product): ProductModifier[] => {
