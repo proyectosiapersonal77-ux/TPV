@@ -52,6 +52,59 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
         return 'kitchen';
     };
 
+    const getItemCategoryName = (productId: string): string => {
+        const product = products.find(p => p.id === productId);
+        if (!product) return 'Otros';
+        const category = categories.find(c => c.id === product.category_id);
+        return category?.name || 'Otros';
+    };
+
+    const processedOrders = useMemo(() => {
+        if (!orders) return [];
+        
+        const mapped = orders.map((order: any) => {
+            const activeItems = order.items.filter((i: OrderItem) => {
+                if (i.status === 'served' || i.status === 'held') return false;
+                
+                if (stationFilter === 'all') return true;
+                
+                const station = getItemStation(i.product_id);
+                if (stationFilter === 'kitchen') return station === 'kitchen' || station === 'none'; // Default to kitchen if none
+                if (stationFilter === 'bar') return station === 'bar';
+                
+                return true;
+            });
+
+            if (activeItems.length === 0) return null;
+
+            // Find the oldest created_at among active items to calculate waiting time accurately for fired courses
+            const oldestItemTime = activeItems.reduce((oldest: string, item: OrderItem) => {
+                if (!item.created_at) return oldest;
+                return new Date(item.created_at) < new Date(oldest) ? item.created_at : oldest;
+            }, activeItems[0]?.created_at || order.created_at);
+            
+            // Group items by category
+            const groupedItems = activeItems.reduce((acc: any, item: OrderItem) => {
+                const categoryName = getItemCategoryName(item.product_id);
+                if (!acc[categoryName]) {
+                    acc[categoryName] = [];
+                }
+                acc[categoryName].push(item);
+                return acc;
+            }, {});
+
+            return {
+                ...order,
+                activeItems,
+                groupedItems,
+                oldestItemTime
+            };
+        }).filter(Boolean);
+
+        // Sort by oldestItemTime (FIFO)
+        return mapped.sort((a, b) => new Date(a.oldestItemTime).getTime() - new Date(b.oldestItemTime).getTime());
+    }, [orders, stationFilter, products, categories]);
+
     const handleItemAction = async (item: OrderItem) => {
         if (user?.role === 'waiter') {
             return; // Waiters have read-only access to kitchen display
@@ -132,29 +185,8 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                             </div>
                         )}
 
-                        {orders.map((order: any) => {
-                            // Filter items based on station
-                            const activeItems = order.items.filter((i: OrderItem) => {
-                                if (i.status === 'served' || i.status === 'held') return false;
-                                
-                                if (stationFilter === 'all') return true;
-                                
-                                const station = getItemStation(i.product_id);
-                                if (stationFilter === 'kitchen') return station === 'kitchen' || station === 'none'; // Default to kitchen if none
-                                if (stationFilter === 'bar') return station === 'bar';
-                                
-                                return true;
-                            });
-
-                            if (activeItems.length === 0) return null;
-
-                            // Find the oldest created_at among active items to calculate waiting time accurately for fired courses
-                            const oldestItemTime = activeItems.reduce((oldest: string, item: OrderItem) => {
-                                if (!item.created_at) return oldest;
-                                return new Date(item.created_at) < new Date(oldest) ? item.created_at : oldest;
-                            }, activeItems[0]?.created_at || order.created_at);
-
-                            const waitingMins = getElapsedTime(oldestItemTime);
+                        {processedOrders.map((order: any) => {
+                            const waitingMins = getElapsedTime(order.oldestItemTime);
                             let headerColor = "bg-green-600";
                             if (waitingMins > 15) headerColor = "bg-yellow-600";
                             if (waitingMins > 30) headerColor = "bg-red-600 animate-pulse";
@@ -168,24 +200,26 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                                         </div>
                                     </div>
                                     
-                                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                                        {activeItems.map((item: OrderItem) => (
-                                            <div 
-                                                key={item.id} 
-                                                className={`p-3 rounded-lg border-l-4 transition-all ${user?.role === 'waiter' ? 'cursor-default' : 'cursor-pointer hover:bg-gray-700'} ${item.status === 'ready' ? 'bg-green-900/20 border-green-500' : 'bg-gray-900 border-gray-600'}`}
-                                                onClick={() => handleItemAction(item)}
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <span className="font-bold text-lg text-white leading-tight">{item.quantity}x {item.product_name}</span>
-                                                    {item.status === 'ready' && <CheckCircle size={18} className="text-green-500 shrink-0 ml-2" />}
+                                    <div className="flex-1 overflow-y-auto p-2 space-y-4">
+                                        {Object.entries(order.groupedItems).map(([categoryName, items]: [string, any]) => (
+                                            <div key={categoryName} className="space-y-2">
+                                                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-700 pb-1">
+                                                    {categoryName}
                                                 </div>
-                                                {item.course && item.course !== 'otros' && (
-                                                    <div className="text-[10px] text-orange-400 uppercase font-bold mt-1">
-                                                        {item.course}
+                                                {items.map((item: OrderItem) => (
+                                                    <div 
+                                                        key={item.id} 
+                                                        className={`p-3 rounded-lg border-l-4 transition-all ${user?.role === 'waiter' ? 'cursor-default' : 'cursor-pointer hover:bg-gray-700'} ${item.status === 'ready' ? 'bg-green-900/20 border-green-500' : 'bg-gray-900 border-gray-600'}`}
+                                                        onClick={() => handleItemAction(item)}
+                                                    >
+                                                        <div className="flex justify-between items-start">
+                                                            <span className="font-bold text-lg text-white leading-tight">{item.quantity}x {item.product_name}</span>
+                                                            {item.status === 'ready' && <CheckCircle size={18} className="text-green-500 shrink-0 ml-2" />}
+                                                        </div>
+                                                        {item.variant_name && <div className="text-sm text-orange-400 font-medium">Format: {item.variant_name}</div>}
+                                                        {item.notes && <div className="mt-1 text-sm bg-red-900/30 text-red-200 p-1 rounded border border-red-900/50 flex items-start gap-1"><AlertTriangle size={12} className="mt-0.5 shrink-0"/> {item.notes}</div>}
                                                     </div>
-                                                )}
-                                                {item.variant_name && <div className="text-sm text-orange-400 font-medium">Format: {item.variant_name}</div>}
-                                                {item.notes && <div className="mt-1 text-sm bg-red-900/30 text-red-200 p-1 rounded border border-red-900/50 flex items-start gap-1"><AlertTriangle size={12} className="mt-0.5 shrink-0"/> {item.notes}</div>}
+                                                ))}
                                             </div>
                                         ))}
                                     </div>
