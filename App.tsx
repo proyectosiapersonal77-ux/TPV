@@ -1,20 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Layout } from './components/Layout';
 import PinPad from './components/PinPad';
-import Dashboard from './components/Dashboard';
-import ConfigScreen from './components/config/ConfigScreen';
-import TablePlan from './components/TablePlan';
-import InventoryManagement from './components/config/InventoryManagement';
-import POSScreen from './components/POS/POSScreen';
-import KitchenDisplay from './components/Kitchen/KitchenDisplay';
-import CashRegisterScreen from './components/CashRegister/CashRegisterScreen';
-import AnalyticsScreen from './components/Analytics/AnalyticsScreen';
 import { SupabaseWarning } from './components/SupabaseWarning';
 import { checkSupabaseConnection } from './Supabase';
 import { verifyPin } from './services/authService';
 import { UserRole, Table, ViewState } from './types';
 import { syncDatabase, processSyncQueue } from './services/syncService';
 import { useAuthStore } from './stores/useAuthStore';
+
+// Lazy loaded components
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const ConfigScreen = React.lazy(() => import('./components/config/ConfigScreen'));
+const TablePlan = React.lazy(() => import('./components/TablePlan'));
+const InventoryManagement = React.lazy(() => import('./components/config/InventoryManagement'));
+const POSScreen = React.lazy(() => import('./components/POS/POSScreen'));
+const KitchenDisplay = React.lazy(() => import('./components/Kitchen/KitchenDisplay'));
+const CashRegisterScreen = React.lazy(() => import('./components/CashRegister/CashRegisterScreen'));
+const AnalyticsScreen = React.lazy(() => import('./components/Analytics/AnalyticsScreen'));
+
+const LoadingFallback = () => (
+  <div className="flex-1 flex items-center justify-center h-screen bg-[#1A1A1A] text-white">
+    <div className="flex flex-col items-center space-y-4">
+      <div className="w-12 h-12 border-4 border-[#F27D26] border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-gray-400 animate-pulse">Cargando módulo...</p>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [isConfigured, setIsConfigured] = useState<boolean>(true);
@@ -103,27 +114,38 @@ const App: React.FC = () => {
 
   // Configuration
   if (currentView === 'config' && isAuthenticated && user?.role === 'admin') {
-    return <ConfigScreen onBack={() => setCurrentView('dashboard')} onNavigate={handleNavigate} />;
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <ConfigScreen onBack={() => setCurrentView('dashboard')} onNavigate={handleNavigate} />
+      </Suspense>
+    );
   }
   
   // Kitchen Display System
   if (currentView === 'kitchen' && isAuthenticated) {
-      return <KitchenDisplay onBack={() => setCurrentView(user?.role === 'admin' ? 'dashboard' : 'login')} onNavigate={handleNavigate} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <KitchenDisplay onBack={() => setCurrentView(user?.role === 'admin' ? 'dashboard' : 'login')} onNavigate={handleNavigate} />
+        </Suspense>
+      );
   }
 
   // Inventory
   if (currentView === 'inventory' && isAuthenticated && user?.role === 'admin') {
       return (
+        <Suspense fallback={<LoadingFallback />}>
           <InventoryManagement 
             onBack={() => setCurrentView('dashboard')} 
             onNavigate={handleNavigate}
           />
+        </Suspense>
       );
   }
 
   // Table Plan
   if (currentView === 'tables' && isAuthenticated && user) {
       return (
+        <Suspense fallback={<LoadingFallback />}>
           <TablePlan 
             user={user} 
             onLogout={handleLogout}
@@ -131,22 +153,32 @@ const App: React.FC = () => {
             onBack={() => setCurrentView('dashboard')}
             onNavigate={handleNavigate}
           />
+        </Suspense>
       );
   }
 
   // Cash Register
   if (currentView === 'cash_register' && isAuthenticated && user?.role === 'admin') {
-      return <CashRegisterScreen employeeId={user.id} onNavigate={handleNavigate} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <CashRegisterScreen employeeId={user.id} onNavigate={handleNavigate} />
+        </Suspense>
+      );
   }
 
   // Analytics
   if (currentView === 'analytics' && isAuthenticated && user?.role === 'admin') {
-      return <AnalyticsScreen onNavigate={handleNavigate} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <AnalyticsScreen onNavigate={handleNavigate} />
+        </Suspense>
+      );
   }
 
   // POS (Point of Sale)
   if (currentView === 'pos' && isAuthenticated && user && selectedTable) {
       return (
+        <Suspense fallback={<LoadingFallback />}>
           <POSScreen 
             table={selectedTable}
             employeeId={user.id}
@@ -156,6 +188,7 @@ const App: React.FC = () => {
             }}
             onNavigate={handleNavigate}
           />
+        </Suspense>
       );
   }
 
@@ -164,10 +197,12 @@ const App: React.FC = () => {
       <div className="flex-1 flex items-center justify-center w-full">
         {isAuthenticated && user && currentView === 'dashboard' ? (
           <div className="w-full h-full animate-in zoom-in-95 duration-300">
-            <Dashboard 
-              onLogout={handleLogout} 
-              onNavigate={handleNavigate}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <Dashboard 
+                onLogout={handleLogout} 
+                onNavigate={handleNavigate}
+              />
+            </Suspense>
           </div>
         ) : (
           <div className="w-full px-4 animate-in fade-in zoom-in-95 duration-500">
