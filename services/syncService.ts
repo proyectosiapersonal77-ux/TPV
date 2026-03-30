@@ -118,14 +118,108 @@ const executeSyncJob = async (job: SyncJob) => {
     const { table_name, action, payload } = job;
 
     if (action === 'create') {
+        // --- CONFLICT RESOLUTION FOR CREATE ---
+        if (table_name === 'order_items') {
+            const orderId = payload.order_id;
+            const { data: orderRecord } = await supabase.from('orders').select('status').eq('id', orderId).single();
+            if (orderRecord && (orderRecord.status === 'paid' || orderRecord.status === 'closed')) {
+                console.warn(`🚫 Conflicto resuelto: Intentando añadir item a una orden ya cobrada/cerrada. Ignorando creación.`);
+                return; // Skip creating the item
+            }
+        }
+        // --------------------------------------
+        
         const { error } = await supabase.from(table_name).insert(payload);
         if (error) throw error;
     } else if (action === 'update') {
         const { id, ...updates } = payload;
-        const { error } = await supabase.from(table_name).update(updates).eq('id', id);
-        if (error) throw error;
+        
+        // --- CONFLICT RESOLUTION LOGIC (CRDTs / Last-Write-Wins) ---
+        try {
+            // 1. Fetch current remote state before updating
+            const { data: remoteRecord, error: fetchError } = await supabase
+                .from(table_name)
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (fetchError && fetchError.code !== 'PGRST116') {
+                console.warn(`⚠️ Error al verificar estado remoto para ${table_name} (${id}):`, fetchError.message);
+            }
+
+            if (remoteRecord) {
+                // 2. Domain-specific resolution (e.g., Orders)
+                if (table_name === 'orders') {
+                    // Prevent reopening a paid/closed order from an offline device
+                    if ((remoteRecord.status === 'paid' || remoteRecord.status === 'closed') && updates.status !== 'paid' && updates.status !== 'closed') {
+                        console.warn(`🚫 Conflicto resuelto: La orden ya fue cobrada/cerrada remotamente. Ignorando actualización local obsoleta.`);
+                        return; // Skip this update, remote wins.
+                    }
+
+                    // CRDT-like resolution for Order Totals:
+                    // Instead of overwriting the total with an offline-calculated total (which might miss items added by others),
+                    // we recalculate it based on the actual items in the database right now.
+                    if (updates.total !== undefined) {
+                        const { data: items } = await supabase.from('order_items').select('price, quantity').eq('order_id', id);
+                        if (items) {
+                            const correctTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                            updates.total = correctTotal;
+                            console.log(`🧮 Total recalculado durante sincronización para evitar conflictos: ${correctTotal}`);
+                        }
+                    }
+                }
+
+                // 3. Timestamp-based resolution (Last-Write-Wins)
+                if (remoteRecord.updated_at) {
+                    const remoteTime = new Date(remoteRecord.updated_at).getTime();
+                    const localTime = job.created_at;
+
+                    // If remote is newer, and we are not just updating the recalculated total, drop the local update
+                    if (remoteTime > localTime) {
+                        const isOnlyTotalUpdate = table_name === 'orders' && Object.keys(updates).length === 1 && updates.total !== undefined;
+                        if (!isOnlyTotalUpdate) {
+                            console.warn(`⚠️ Conflicto detectado en ${table_name} (${id}). Registro remoto más reciente. Aplicando Last-Write-Wins.`);
+                            return; // Skip update
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Error en lógica de resolución de conflictos:", e);
+            // Proceed with update if conflict resolution fails, to avoid blocking the queue indefinitely
+        }
+        // -----------------------------------------------------------
+
+        // Add updated_at to the payload if we are updating, to ensure future conflicts can be resolved
+        const finalUpdates = { ...updates, updated_at: new Date().toISOString() };
+        
+        const { error } = await supabase.from(table_name).update(finalUpdates).eq('id', id);
+        
+        // If updated_at column doesn't exist yet, fallback to original updates
+        if (error && error.message && error.message.includes('column "updated_at" of relation')) {
+            console.warn(`⚠️ Columna updated_at no existe en ${table_name}. Aplicando actualización sin timestamp.`);
+            const { error: fallbackError } = await supabase.from(table_name).update(updates).eq('id', id);
+            if (fallbackError) throw fallbackError;
+        } else if (error) {
+            throw error;
+        }
+
     } else if (action === 'delete') {
         const { id } = payload;
+
+        // --- CONFLICT RESOLUTION FOR DELETE ---
+        if (table_name === 'order_items') {
+            const { data: itemRecord } = await supabase.from('order_items').select('order_id').eq('id', id).single();
+            if (itemRecord) {
+                const { data: orderRecord } = await supabase.from('orders').select('status').eq('id', itemRecord.order_id).single();
+                if (orderRecord && (orderRecord.status === 'paid' || orderRecord.status === 'closed')) {
+                    console.warn(`🚫 Conflicto resuelto: Intentando eliminar item de una orden ya cobrada/cerrada. Ignorando eliminación.`);
+                    return; // Skip deleting the item
+                }
+            }
+        }
+        // --------------------------------------
+
         const { error } = await supabase.from(table_name).delete().eq('id', id);
         if (error) throw error;
     }

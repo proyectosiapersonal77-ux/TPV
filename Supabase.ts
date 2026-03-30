@@ -25,7 +25,12 @@ export const checkSupabaseConnection = () => {
   alter table product_ingredients add column if not exists yield_percentage numeric default 100;
   alter table products add column if not exists barcode text unique;
 
-  -- 2. Asegurar que las tablas base existen (si es instalación limpia)
+  -- 2. CAMPOS PARA RESOLUCIÓN DE CONFLICTOS (CRDTs / Last-Write-Wins)
+  alter table orders add column if not exists updated_at timestamptz default now();
+  alter table order_items add column if not exists updated_at timestamptz default now();
+  alter table tables add column if not exists updated_at timestamptz default now();
+
+  -- 3. Asegurar que las tablas base existen (si es instalación limpia)
   
   create table if not exists units_of_measure (
     id uuid default gen_random_uuid() primary key,
