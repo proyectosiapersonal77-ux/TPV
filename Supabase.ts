@@ -30,7 +30,22 @@ export const checkSupabaseConnection = () => {
   alter table order_items add column if not exists updated_at timestamptz default now();
   alter table tables add column if not exists updated_at timestamptz default now();
 
-  -- 3. Asegurar que las tablas base existen (si es instalación limpia)
+  -- 3. CUMPLIMIENTO LEY ANTIFRAUDE (VeriFactu / TicketBAI)
+  alter table orders add column if not exists invoice_number text unique;
+  alter table orders add column if not exists invoice_hash text;
+  alter table orders add column if not exists previous_invoice_hash text;
+
+  create table if not exists audit_logs (
+    id uuid default gen_random_uuid() primary key,
+    action text not null,
+    entity_type text not null,
+    entity_id uuid not null,
+    employee_id uuid references employees(id) on delete set null,
+    details jsonb,
+    created_at timestamptz default now()
+  );
+
+  -- 4. Asegurar que las tablas base existen (si es instalación limpia)
   
   create table if not exists units_of_measure (
     id uuid default gen_random_uuid() primary key,

@@ -36,6 +36,7 @@ export class GastroDB extends Dexie {
     // Transactions / POS (Offline Capable)
     orders!: Table<any>; // Storing denormalized orders for offline view
     syncQueue!: Table<SyncJob>;
+    audit_logs!: Table<any>;
     
     // Cash Management
     cash_registers!: Table<CashRegister>;
@@ -48,8 +49,8 @@ export class GastroDB extends Dexie {
     constructor() {
         super('GastroPOS_DB');
         
-        // Bumped to version 7 for promotions
-        (this as any).version(7).stores({
+        // Bumped to version 8 for audit logs
+        (this as any).version(8).stores({
             // Core Inventory
             products: 'id, name, category_id, subcategory_id, supplier_id',
             categories: 'id, name',
@@ -70,6 +71,7 @@ export class GastroDB extends Dexie {
             // POS & Sync
             orders: 'id, table_id, status, created_at', 
             syncQueue: '++id, table_name, action, created_at',
+            audit_logs: 'id, action, entity_type, entity_id, created_at',
             
             // Cash Management
             cash_registers: 'id, status, opened_at, closed_at',

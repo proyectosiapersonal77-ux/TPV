@@ -2,6 +2,7 @@ import { supabase } from '../Supabase';
 import { db } from '../db';
 import { queueChange } from './syncService';
 import { Order, OrderItem, OrderStatus, OrderItemStatus } from '../types';
+import { generateSHA256Hash } from './cryptoService';
 
 // Helper to generate UUID v4 (required for offline ID generation)
 function uuidv4() {
@@ -329,13 +330,46 @@ export const fireCourse = async (orderId: string, course: string): Promise<void>
 };
 
 // Close/Pay Order
-export const closeOrder = async (orderId: string, paymentMethod: 'cash' | 'card' | 'other' = 'cash', finalTotal?: number): Promise<void> => {
+export const closeOrder = async (orderId: string, paymentMethod: 'cash' | 'card' | 'other' = 'cash', finalTotal?: number, employeeId?: string): Promise<void> => {
     const closedAt = new Date().toISOString();
     
+    // --- VERIFACTU / TICKETBAI COMPLIANCE: GENERATE CHAINED HASH ---
+    let invoiceNumber = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    let previousHash = 'GENESIS_HASH';
+    
+    try {
+        // Get the last closed order to chain the hash
+        const lastOrder = await db.orders
+            .filter(o => o.status === 'paid' || o.status === 'closed')
+            .reverse()
+            .sortBy('closed_at');
+            
+        if (lastOrder && lastOrder.length > 0 && lastOrder[0].invoice_hash) {
+            previousHash = lastOrder[0].invoice_hash;
+        }
+    } catch (e) {
+        console.warn("Could not fetch previous hash, using GENESIS_HASH");
+    }
+
+    // Prepare data for hashing (must be deterministic)
+    const orderDataToHash = {
+        orderId,
+        closedAt,
+        paymentMethod,
+        total: finalTotal || 0,
+        previousHash
+    };
+    
+    const invoiceHash = await generateSHA256Hash(JSON.stringify(orderDataToHash));
+    // ---------------------------------------------------------------
+
     const updateData: any = {
         status: 'paid',
         closed_at: closedAt,
-        payment_method: paymentMethod
+        payment_method: paymentMethod,
+        invoice_number: invoiceNumber,
+        invoice_hash: invoiceHash,
+        previous_invoice_hash: previousHash
     };
     if (finalTotal !== undefined) {
         updateData.total = finalTotal;
@@ -350,14 +384,43 @@ export const closeOrder = async (orderId: string, paymentMethod: 'cash' | 'card'
             created_at: closedAt,
             table_id: 'unknown',
             payment_method: paymentMethod,
+            invoice_number: invoiceNumber,
+            invoice_hash: invoiceHash,
+            previous_invoice_hash: previousHash,
             ...(finalTotal !== undefined ? { total: finalTotal } : {})
         });
     }
 
+    // Queue order update
     await queueChange('orders', 'update', { 
         id: orderId, 
         ...updateData
     });
+
+    // --- AUDIT LOG (Unalterable Event Record) ---
+    const auditLogId = uuidv4();
+    const auditLog = {
+        id: auditLogId,
+        action: 'ORDER_CLOSED_AND_SIGNED',
+        entity_type: 'orders',
+        entity_id: orderId,
+        employee_id: employeeId || 'system',
+        details: JSON.stringify({
+            invoice_number: invoiceNumber,
+            total: finalTotal,
+            payment_method: paymentMethod,
+            hash: invoiceHash
+        }),
+        created_at: closedAt
+    };
+
+    try {
+        await db.audit_logs.put(auditLog);
+        await queueChange('audit_logs', 'create', auditLog);
+    } catch (e) {
+        console.error("Failed to save audit log", e);
+    }
+    // --------------------------------------------
 };
 
 // Split order: Moves specific items to a NEW order and updates totals

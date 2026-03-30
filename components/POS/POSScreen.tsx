@@ -339,7 +339,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                   // Don't block payment if printing fails
               }
           }
-          await OrderService.closeOrder(currentOrder.id, method, calculateTotal());
+          await OrderService.closeOrder(currentOrder.id, method, calculateTotal(), employeeId);
           queryClient.invalidateQueries({ queryKey: ['activeOrder'] });
           setPaymentModalOpen(false);
           onBack(); 
@@ -594,7 +594,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
               // 1. Move items to new order
               const newOrderId = await OrderService.splitOrder(order, itemsToMove, employeeId);
               // 2. Pay that new order
-              await OrderService.closeOrder(newOrderId, method, finalSelectedTotal);
+              await OrderService.closeOrder(newOrderId, method, finalSelectedTotal, employeeId);
               
               if (manualDiscount && manualDiscount.type === 'fixed_amount') {
                   setManualDiscount({
@@ -734,7 +734,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                           console.error(printErr);
                       }
                   }
-                  await OrderService.closeOrder(currentOrder!.id, method, calculateTotal());
+                  await OrderService.closeOrder(currentOrder!.id, method, calculateTotal(), employeeId);
                   queryClient.invalidateQueries({ queryKey: ['activeOrder'] });
                   setPaymentModalOpen(false);
                   onBack();

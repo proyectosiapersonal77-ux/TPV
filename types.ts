@@ -264,10 +264,25 @@ export interface Order {
     closed_at?: string;
     payment_method?: 'cash' | 'card' | 'other';
     
+    // VeriFactu / TicketBAI Compliance Fields
+    invoice_number?: string;
+    invoice_hash?: string;
+    previous_invoice_hash?: string;
+    
     // Joins
     items?: OrderItem[];
     tables?: Table;
     employees?: Employee;
+}
+
+export interface AuditLog {
+    id: string;
+    action: string; // e.g., 'ORDER_CLOSED', 'ITEM_DELETED'
+    entity_type: string; // e.g., 'Order', 'OrderItem'
+    entity_id: string;
+    employee_id: string;
+    details: string; // JSON stringified details
+    created_at: string;
 }
 
 export interface CashRegister {
