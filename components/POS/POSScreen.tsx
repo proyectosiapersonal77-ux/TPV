@@ -1387,28 +1387,28 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                     </div>
 
                     {/* Mode Tabs */}
-                    <div className="flex border-b border-brand-700 bg-brand-900/30 shrink-0">
+                    <div className="flex border-b border-brand-700 bg-brand-900/30 shrink-0 overflow-x-auto whitespace-nowrap hide-scrollbar">
                         <button 
                             onClick={() => setPaymentMode('full')} 
-                            className={`flex-1 py-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'full' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
+                            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'full' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
                         >
                             <ArrowRight size={18} /> Completo
                         </button>
                         <button 
                             onClick={() => setPaymentMode('items')} 
-                            className={`flex-1 py-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'items' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
+                            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'items' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
                         >
                             <Split size={18} /> Artículos
                         </button>
                         <button 
                             onClick={() => setPaymentMode('diners')} 
-                            className={`flex-1 py-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'diners' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
+                            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'diners' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
                         >
                             <Users size={18} /> Comensales
                         </button>
                         <button 
                             onClick={() => setPaymentMode('manual')} 
-                            className={`flex-1 py-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'manual' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
+                            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'manual' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
                         >
                             <Calculator size={18} /> Manual
                         </button>
