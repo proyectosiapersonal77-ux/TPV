@@ -49,10 +49,13 @@ const TablePlan: React.FC<TablePlanProps> = ({ user, onLogout, onSelectTable, on
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
             fetchOrdersStatus();
         })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, () => {
+            loadData();
+        })
         .subscribe();
 
     return () => {
-        subscription.unsubscribe();
+        supabase.removeChannel(subscription);
     };
   }, []);
 

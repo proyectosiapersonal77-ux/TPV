@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Clock, CheckCircle, AlertTriangle, RefreshCw, ChefHat, ArrowLeft, Loader2, Beer, Utensils } from 'lucide-react';
 import * as OrderService from '../../services/orderService';
 import * as InventoryService from '../../services/inventoryService';
@@ -6,6 +6,7 @@ import { OrderItem, ViewState, Product, ProductCategory } from '../../types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAllTables } from '../../services/tableService';
 import AdminNavigation from '../AdminNavigation';
+import { supabase } from '../../Supabase';
 
 import { useAuthStore } from '../../stores/useAuthStore';
 
@@ -38,8 +39,24 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                 return o;
             });
         },
-        refetchInterval: 3000, // Poll every 3 seconds
+        // Removed refetchInterval for Supabase Realtime
     });
+
+    useEffect(() => {
+        const channel = supabase
+            .channel('kitchen-orders')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+                refetch();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => {
+                refetch();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [refetch]);
 
     const getItemStation = (productId: string): 'kitchen' | 'bar' | 'none' => {
         const product = products.find(p => p.id === productId);

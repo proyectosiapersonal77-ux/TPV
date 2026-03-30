@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminNavigation from '../AdminNavigation';
 import { bluetoothPrinter } from '../../services/BluetoothPrinterService';
 import { redsysService } from '../../services/RedsysService';
+import { supabase } from '../../Supabase';
 
 interface POSScreenProps {
   table: Table;
@@ -49,9 +50,25 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   const { data: promotions = [] } = useQuery({ queryKey: ['promotions'], queryFn: InventoryService.getPromotions });
   const { data: currentOrder, refetch: refetchOrder } = useQuery({ 
       queryKey: ['activeOrder', table.id], 
-      queryFn: () => OrderService.getActiveOrderForTable(table.id),
-      refetchInterval: 5000 // Poll every 5s for updates from other waiters
+      queryFn: () => OrderService.getActiveOrderForTable(table.id)
+      // Removed refetchInterval for Supabase Realtime
   });
+
+  useEffect(() => {
+      const channel = supabase
+          .channel(`pos-orders-${table.id}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+              refetchOrder();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => {
+              refetchOrder();
+          })
+          .subscribe();
+
+      return () => {
+          supabase.removeChannel(channel);
+      };
+  }, [table.id, refetchOrder]);
 
   const activeProducts = useMemo(() => products.filter(p => p.active), [products]);
 
@@ -270,7 +287,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
               price: item.price,
               variant_name: item.variant?.name,
               notes: item.notes,
-              course: item.course
+              course: item.course as any
           }));
 
           await OrderService.addItemsToOrder(orderId, itemsToSend, employeeId);
