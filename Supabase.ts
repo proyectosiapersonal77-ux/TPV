@@ -117,5 +117,10 @@ export const checkSupabaseConnection = () => {
   alter table courses disable row level security;
   alter table purchase_orders disable row level security;
   alter table purchase_order_items disable row level security;
+  
+  -- Habilitar RLS para audit_logs con políticas de acceso
+  alter table audit_logs enable row level security;
+  create policy "Permitir insert a todos" on audit_logs for insert to public with check (true);
+  create policy "Permitir select a todos" on audit_logs for select to public using (true);
 
 */

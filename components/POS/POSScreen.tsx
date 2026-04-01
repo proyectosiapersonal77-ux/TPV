@@ -91,6 +91,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   
   // Selections
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
 
   // Set default category
   useEffect(() => {
@@ -1093,7 +1094,18 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                                     </span>
                                 </div>
                             </div>
-                            <span className="font-mono text-gray-400">{(item.price * item.quantity).toFixed(2)}€</span>
+                            <div className="flex flex-col items-end gap-2">
+                                <span className="font-mono text-gray-400">{(item.price * item.quantity).toFixed(2)}€</span>
+                                {item.status !== 'served' && item.status !== 'paid' && (
+                                    <button 
+                                        onClick={() => setItemToDelete(item)}
+                                        className="w-8 h-8 flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 hover:border-red-500 rounded-lg transition-all active:scale-95"
+                                        title="Eliminar producto"
+                                    >
+                                        <Trash2 size={14}/>
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -1370,6 +1382,49 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
         {showMobileCart && (
             <div className="md:hidden fixed inset-0 z-40 bg-brand-800 flex flex-col animate-in slide-in-from-bottom-full duration-200">
                 <TicketContent />
+            </div>
+        )}
+
+        {/* === DELETE CONFIRMATION MODAL === */}
+        {itemToDelete && (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                <div className="bg-brand-800 border border-brand-600 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
+                    <div className="p-6 text-center">
+                        <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <AlertCircle size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Eliminar Producto</h3>
+                        <p className="text-gray-300 mb-6">
+                            ¿Estás seguro de que deseas eliminar <strong>{itemToDelete.product_name}</strong> de la comanda?
+                        </p>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setItemToDelete(null)}
+                                className="flex-1 py-3 rounded-xl bg-brand-700 hover:bg-brand-600 text-white font-bold transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={async () => {
+                                    setProcessing(true);
+                                    try {
+                                        await OrderService.deleteOrderItem(currentOrder!.id, itemToDelete.id, employeeId || 'system');
+                                        refetchOrder();
+                                        setItemToDelete(null);
+                                    } catch (e) {
+                                        console.error("Error deleting item", e);
+                                    } finally {
+                                        setProcessing(false);
+                                    }
+                                }}
+                                disabled={processing}
+                                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-colors disabled:opacity-50"
+                            >
+                                {processing ? <Loader2 className="animate-spin mx-auto" /> : 'Eliminar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         )}
 

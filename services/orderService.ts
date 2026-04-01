@@ -3,6 +3,7 @@ import { db } from '../db';
 import { queueChange } from './syncService';
 import { Order, OrderItem, OrderStatus, OrderItemStatus } from '../types';
 import { generateSHA256Hash } from './cryptoService';
+import { logAction } from './auditService';
 
 // Helper to generate UUID v4 (required for offline ID generation)
 function uuidv4() {
@@ -306,6 +307,42 @@ export const updateOrderItemStatus = async (itemId: string, status: OrderItemSta
             break;
         }
     }
+};
+
+// Delete Order Item
+export const deleteOrderItem = async (orderId: string, itemId: string, employeeId: string): Promise<void> => {
+    const order = await db.orders.get(orderId);
+    if (!order || !order.items) return;
+
+    const itemToDelete = order.items.find(i => i.id === itemId);
+    if (!itemToDelete) return;
+
+    // Remove from local order items array
+    const updatedItems = order.items.filter(i => i.id !== itemId);
+    
+    // Recalculate total
+    const newTotal = updatedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+    // Update local DB
+    await db.orders.update(orderId, { items: updatedItems, total: newTotal });
+
+    // Queue changes
+    await queueChange('order_items', 'delete', { id: itemId });
+    await queueChange('orders', 'update', { id: orderId, total: newTotal });
+
+    // Audit log
+    await logAction(
+        'ITEM_DELETED',
+        'order_items',
+        itemId,
+        employeeId,
+        {
+            order_id: orderId,
+            product_name: itemToDelete.product_name,
+            quantity: itemToDelete.quantity,
+            price: itemToDelete.price
+        }
+    );
 };
 
 export const fireCourse = async (orderId: string, course: string): Promise<void> => {

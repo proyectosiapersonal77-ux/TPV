@@ -196,7 +196,7 @@ const executeSyncJob = async (job: SyncJob) => {
         const { error } = await supabase.from(table_name).update(finalUpdates).eq('id', id);
         
         // If updated_at column doesn't exist yet, fallback to original updates
-        if (error && error.message && error.message.includes('column "updated_at" of relation')) {
+        if (error && error.message && (error.message.includes('column "updated_at" of relation') || error.message.includes("Could not find the 'updated_at' column"))) {
             console.warn(`⚠️ Columna updated_at no existe en ${table_name}. Aplicando actualización sin timestamp.`);
             const { error: fallbackError } = await supabase.from(table_name).update(updates).eq('id', id);
             if (fallbackError) throw fallbackError;

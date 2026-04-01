@@ -2,6 +2,7 @@ import { supabase } from '../Supabase';
 import { db } from '../db';
 import { queueChange } from './syncService';
 import { Product, ProductCategory, ProductSubcategory, Supplier, Allergen, ProductVariant, ProductIngredient, UnitOfMeasure, StockMovement, WasteReason, ProductModifier, Course, StockUnit } from '../types';
+import { logAction } from './auditService';
 
 // --- MODIFIER HELPERS ---
 export const getProductModifiers = (product: Product): ProductModifier[] => {
@@ -187,6 +188,20 @@ export const updateProduct = async (id: string, productData: Partial<Product> & 
                   new_stock_level: Number(updates.stock_current),
                   reason: 'Corrección'
               });
+              
+              // Audit log for manual stock modification
+              await logAction(
+                  'MANUAL_STOCK_MODIFICATION',
+                  'products',
+                  id,
+                  userId || 'system',
+                  {
+                      product_name: currentProd.name,
+                      old_stock: currentProd.stock_current,
+                      new_stock: updates.stock_current,
+                      diff: diff
+                  }
+              );
           }
           
           // Check for purchase order generation if stock decreased
