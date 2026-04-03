@@ -45,6 +45,15 @@ export const checkSupabaseConnection = () => {
     created_at timestamptz default now()
   );
 
+  create table if not exists roles (
+    id uuid default gen_random_uuid() primary key,
+    name text not null,
+    color text,
+    is_system boolean default false,
+    permissions jsonb default '{}'::jsonb,
+    created_at timestamptz default now()
+  );
+
   -- 4. Asegurar que las tablas base existen (si es instalación limpia)
   
   create table if not exists units_of_measure (

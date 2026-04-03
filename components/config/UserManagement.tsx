@@ -39,6 +39,7 @@ const UserManagement: React.FC = () => {
   // State for Editing an existing Role
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [editingRoleName, setEditingRoleName] = useState('');
+  const [editingRolePermissions, setEditingRolePermissions] = useState<any>({});
 
   // Delete Modals
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -176,11 +177,13 @@ const UserManagement: React.FC = () => {
   const startEditRole = (role: Role) => {
     setEditingRoleId(role.id);
     setEditingRoleName(role.name);
+    setEditingRolePermissions(role.permissions || {});
   };
 
   const cancelEditRole = () => {
     setEditingRoleId(null);
     setEditingRoleName('');
+    setEditingRolePermissions({});
   };
 
   const handleUpdateRole = async (originalRoleName: string) => {
@@ -188,7 +191,7 @@ const UserManagement: React.FC = () => {
     setRoleLoading(true);
     try {
         const newNameNormalized = editingRoleName.toLowerCase();
-        await updateRole(editingRoleId, { name: newNameNormalized });
+        await updateRole(editingRoleId, { name: newNameNormalized, permissions: editingRolePermissions });
         
         if (originalRoleName !== newNameNormalized) {
              const { error: updateEmpsError } = await supabase
@@ -199,7 +202,7 @@ const UserManagement: React.FC = () => {
              const updatedEmps = await getAllEmployees();
              setEmployees(updatedEmps);
         }
-        setRoles(prev => prev.map(r => r.id === editingRoleId ? { ...r, name: newNameNormalized } : r));
+        setRoles(prev => prev.map(r => r.id === editingRoleId ? { ...r, name: newNameNormalized, permissions: editingRolePermissions } : r));
         setEditingRoleId(null);
     } catch (err: any) {
         showNotification('Error', 'Error actualizando rol: ' + err.message);
@@ -489,16 +492,43 @@ const UserManagement: React.FC = () => {
                         {roles.map((role) => (
                             <div key={role.id} className="flex items-center justify-between p-3 bg-brand-900/50 rounded-lg border border-brand-700/50">
                                 {editingRoleId === role.id ? (
-                                    <div className="flex gap-2 w-full">
-                                        <input 
-                                            type="text" 
-                                            value={editingRoleName}
-                                            onChange={(e) => setEditingRoleName(e.target.value)}
-                                            className="flex-1 bg-brand-800 border border-brand-600 rounded px-2 text-sm text-white focus:outline-none focus:border-brand-accent"
-                                            autoFocus
-                                        />
-                                        <button type="button" onClick={() => handleUpdateRole(role.name)} className="text-green-400 p-1 hover:bg-green-500/10 rounded"><Check size={16} /></button>
-                                        <button type="button" onClick={cancelEditRole} className="text-gray-400 p-1 hover:bg-gray-500/10 rounded"><X size={16} /></button>
+                                    <div className="flex flex-col gap-3 w-full">
+                                        <div className="flex gap-2 w-full">
+                                            <input 
+                                                type="text" 
+                                                value={editingRoleName}
+                                                onChange={(e) => setEditingRoleName(e.target.value)}
+                                                className="flex-1 bg-brand-800 border border-brand-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-accent"
+                                                autoFocus
+                                            />
+                                            <button type="button" onClick={() => handleUpdateRole(role.name)} className="text-green-400 p-1 hover:bg-green-500/10 rounded"><Check size={20} /></button>
+                                            <button type="button" onClick={cancelEditRole} className="text-gray-400 p-1 hover:bg-gray-500/10 rounded"><X size={20} /></button>
+                                        </div>
+                                        <div className="space-y-3 mt-2 border-t border-brand-700/50 pt-3">
+                                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Permisos</p>
+                                            {[
+                                                { id: 'can_discount', label: 'Aplicar descuentos' },
+                                                { id: 'can_open_drawer', label: 'Abrir cajón portamonedas' },
+                                                { id: 'can_void_ticket', label: 'Anular tickets cerrados' },
+                                                { id: 'can_manage_inventory', label: 'Gestionar inventario' },
+                                                { id: 'can_manage_employees', label: 'Gestionar empleados' },
+                                                { id: 'can_view_reports', label: 'Ver informes y analíticas' },
+                                                { id: 'can_manage_settings', label: 'Configuración del sistema' }
+                                            ].map(perm => (
+                                                <label key={perm.id} className="flex items-center justify-between cursor-pointer group">
+                                                    <span className="text-sm text-gray-300 group-hover:text-white transition-colors">{perm.label}</span>
+                                                    <div className="relative inline-flex items-center cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="sr-only peer"
+                                                            checked={!!editingRolePermissions[perm.id]}
+                                                            onChange={(e) => setEditingRolePermissions({...editingRolePermissions, [perm.id]: e.target.checked})}
+                                                        />
+                                                        <div className="w-9 h-5 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-accent"></div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                 ) : (
                                     <>

@@ -11,7 +11,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
-  const { user } = useAuthStore();
+  const { user, userRole } = useAuthStore();
   const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncing, setSyncing] = useState(false);
@@ -41,7 +41,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
     
     if (r === UserRole.KITCHEN || r.includes('cocina')) return <ChefHat className="w-12 h-12 mb-2 text-brand-accent" />;
     if (r === UserRole.WAITER || r.includes('sala') || r.includes('camarer')) return <Utensils className="w-12 h-12 mb-2 text-green-400" />;
-    if (r === UserRole.ADMIN || r.includes('admin') || r.includes('encargad')) return <ShieldAlert className="w-12 h-12 mb-2 text-red-400" />;
+    if (r === UserRole.ADMIN || r.includes('admin') || r.includes('encargad') || userRole?.permissions?.can_manage_settings) return <ShieldAlert className="w-12 h-12 mb-2 text-red-400" />;
     
     return <User className="w-12 h-12 mb-2 text-blue-400" />;
   };
@@ -82,7 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
            </div>
            
            {/* Direct Config Button for Admins instead of Navigation Menu */}
-           {user.role === UserRole.ADMIN && (
+           {(userRole?.permissions?.can_manage_settings || user.role.toLowerCase() === UserRole.ADMIN) && (
                <button 
                  onClick={() => onNavigate('config')}
                  className="bg-brand-700 hover:bg-brand-600 text-gray-200 border border-brand-600 p-2.5 rounded-lg transition-colors shadow-lg active:scale-95"

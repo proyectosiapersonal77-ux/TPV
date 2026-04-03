@@ -460,6 +460,44 @@ export const closeOrder = async (orderId: string, paymentMethod: 'cash' | 'card'
     // --------------------------------------------
 };
 
+export const voidOrder = async (orderId: string, employeeId: string, reason: string): Promise<void> => {
+    const closedAt = new Date().toISOString();
+    
+    const updateData: any = {
+        status: 'voided',
+        closed_at: closedAt,
+    };
+
+    try {
+        await db.orders.update(orderId, updateData);
+    } catch (e) {
+        throw new Error('Order not found');
+    }
+
+    // Queue order update
+    await queueChange('orders', 'update', { 
+        id: orderId, 
+        ...updateData
+    });
+
+    // --- AUDIT LOG ---
+    const auditLogId = uuidv4();
+    const auditLog = {
+        id: auditLogId,
+        action: 'ORDER_VOIDED',
+        entity_type: 'orders',
+        entity_id: orderId,
+        employee_id: employeeId || 'system',
+        details: JSON.stringify({
+            reason: reason
+        }),
+        created_at: closedAt
+    };
+    
+    await db.audit_logs.put(auditLog);
+    await queueChange('audit_logs', 'create', auditLog);
+};
+
 // Split order: Moves specific items to a NEW order and updates totals
 export const splitOrder = async (originalOrder: Order, itemsToMove: OrderItem[], employeeId: string): Promise<string> => {
     const newOrder = await createOrder(originalOrder.table_id, employeeId);

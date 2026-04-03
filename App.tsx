@@ -62,17 +62,19 @@ const App: React.FC = () => {
     setLoginError(null);
     
     // Verify User
-    const { user: verifiedUser, error } = await verifyPin(pin);
+    const { user: verifiedUser, role: verifiedRole, error } = await verifyPin(pin);
 
     if (verifiedUser && !error) {
-      login(verifiedUser); // Update Zustand Store
+      login(verifiedUser, verifiedRole); // Update Zustand Store
       setLoginLoading(false);
 
       // ROUTING LOGIC:
-      const role = verifiedUser.role.toLowerCase();
-      if (role === UserRole.ADMIN) {
+      const roleName = verifiedUser.role.toLowerCase();
+      
+      // Use permissions if available, otherwise fallback to role name
+      if (verifiedRole?.permissions?.can_manage_settings || roleName === UserRole.ADMIN) {
         setCurrentView('dashboard');
-      } else if (role === UserRole.KITCHEN) {
+      } else if (roleName === UserRole.KITCHEN) {
         setCurrentView('kitchen');
       } else {
         setCurrentView('tables'); // Waiters go to tables

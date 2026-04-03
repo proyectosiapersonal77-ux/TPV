@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Banknote, CreditCard, ArrowDownCircle, ArrowUpCircle, 
-    Lock, Unlock, History, Loader2, AlertCircle, ChevronLeft, ArrowRightLeft
+    Lock, Unlock, History, Loader2, AlertCircle, ChevronLeft, ArrowRightLeft, Printer
 } from 'lucide-react';
 import { CashRegister, CashMovement, ViewState } from '../../types';
 import * as CashService from '../../services/cashService';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '../../stores/useAuthStore';
+import { bluetoothPrinter } from '../../services/BluetoothPrinterService';
 
 interface CashRegisterScreenProps {
     employeeId: string;
@@ -14,6 +16,7 @@ interface CashRegisterScreenProps {
 
 export default function CashRegisterScreen({ employeeId, onNavigate }: CashRegisterScreenProps) {
     const queryClient = useQueryClient();
+    const { userRole, user } = useAuthStore();
     const [amount, setAmount] = useState('');
     const [reason, setReason] = useState('');
     const [processing, setProcessing] = useState(false);
@@ -144,6 +147,15 @@ export default function CashRegisterScreen({ employeeId, onNavigate }: CashRegis
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    {(userRole?.permissions?.can_open_drawer || user?.role.toLowerCase() === 'admin') && (
+                        <button 
+                            onClick={() => bluetoothPrinter.openDrawer()}
+                            className="px-4 py-2 bg-brand-700 hover:bg-brand-600 text-white rounded-lg font-bold flex items-center gap-2 transition-colors border border-brand-600"
+                        >
+                            <Printer size={18} />
+                            Abrir Cajón
+                        </button>
+                    )}
                     <div className={`px-4 py-2 rounded-lg font-bold flex items-center gap-2 ${currentRegister ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
                         {currentRegister ? <Unlock size={18} /> : <Lock size={18} />}
                         {currentRegister ? 'CAJA ABIERTA' : 'CAJA CERRADA'}

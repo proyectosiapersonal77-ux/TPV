@@ -15,6 +15,7 @@ import AdminNavigation from '../AdminNavigation';
 import { bluetoothPrinter } from '../../services/BluetoothPrinterService';
 import { redsysService } from '../../services/RedsysService';
 import { supabase } from '../../Supabase';
+import { useAuthStore } from '../../stores/useAuthStore';
 
 interface POSScreenProps {
   table: Table;
@@ -25,6 +26,7 @@ interface POSScreenProps {
 
 const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavigate }) => {
   const queryClient = useQueryClient();
+  const { userRole, user } = useAuthStore();
   const [processing, setProcessing] = useState(false); 
   const [error, setError] = useState<string | null>(null);
   const [manualDiscount, setManualDiscount] = useState<{type: 'percentage' | 'fixed_amount', value: number} | null>(null);
@@ -1162,21 +1164,25 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
 
         <div className="p-4 bg-brand-900 border-t border-brand-700 shrink-0 pb-safe">
             <div className="flex justify-between items-center mb-2">
-                <button 
-                    onClick={() => setIsDiscountModalOpen(true)}
-                    className="text-brand-accent hover:text-brand-accentHover text-sm font-bold flex items-center gap-1 transition-colors"
-                >
-                    <Tag size={16} />
-                    {manualDiscount ? 'Modificar Descuento' : 'Aplicar Descuento'}
-                </button>
-                {manualDiscount && (
-                    <button 
-                        onClick={() => setManualDiscount(null)}
-                        className="text-red-400 hover:text-red-300 text-sm font-bold flex items-center gap-1 transition-colors"
-                    >
-                        <X size={16} /> Quitar
-                    </button>
-                )}
+                {(userRole?.permissions?.can_discount || user?.role.toLowerCase() === 'admin') ? (
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setIsDiscountModalOpen(true)}
+                            className="text-brand-accent hover:text-brand-accentHover text-sm font-bold flex items-center gap-1 transition-colors"
+                        >
+                            <Tag size={16} />
+                            {manualDiscount ? 'Modificar Descuento' : 'Aplicar Descuento'}
+                        </button>
+                        {manualDiscount && (
+                            <button 
+                                onClick={() => setManualDiscount(null)}
+                                className="text-red-400 hover:text-red-300 text-sm font-bold flex items-center gap-1 transition-colors"
+                            >
+                                <X size={16} /> Quitar
+                            </button>
+                        )}
+                    </div>
+                ) : <div></div>}
             </div>
             {getTicketTotals().discountTotal > 0 && (
                 <div className="flex justify-between items-end mb-2 text-green-400">

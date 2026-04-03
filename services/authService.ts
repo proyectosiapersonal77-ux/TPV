@@ -1,7 +1,8 @@
 import { supabase } from '../Supabase';
-import { Employee } from '../types';
+import { Employee, Role } from '../types';
+import { getAllRoles } from './roleService';
 
-export const verifyPin = async (pin: string): Promise<{ user: Employee | null; error: string | null }> => {
+export const verifyPin = async (pin: string): Promise<{ user: Employee | null; role: Role | null; error: string | null }> => {
   try {
     // SECURITY: We filter by PIN in the database, but we select only safe columns to return.
     // The 'pin' column is excluded from the result set.
@@ -14,14 +15,31 @@ export const verifyPin = async (pin: string): Promise<{ user: Employee | null; e
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return { user: null, error: 'PIN incorrecto' };
+        return { user: null, role: null, error: 'PIN incorrecto' };
       }
-      return { user: null, error: error.message };
+      return { user: null, role: null, error: error.message };
     }
 
-    return { user: data as Employee, error: null };
+    const employee = data as Employee;
+    
+    // Fetch role permissions
+    const { data: roleData, error: roleError } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('name', employee.role)
+      .single();
+
+    let finalRole: Role | null = roleData as Role;
+
+    if (roleError || !roleData) {
+      // Fallback to default roles if table doesn't exist or role not found
+      const defaultRoles = await getAllRoles();
+      finalRole = defaultRoles.find(r => r.name.toLowerCase() === employee.role.toLowerCase()) || null;
+    }
+
+    return { user: employee, role: finalRole, error: null };
   } catch (err: any) {
-    return { user: null, error: err.message || 'Error de conexión' };
+    return { user: null, role: null, error: err.message || 'Error de conexión' };
   }
 };
 

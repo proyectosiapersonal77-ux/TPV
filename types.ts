@@ -6,11 +6,23 @@ export enum UserRole {
   KITCHEN = 'kitchen'
 }
 
+export interface RolePermissions {
+  can_discount?: boolean;
+  can_open_drawer?: boolean;
+  can_void_ticket?: boolean;
+  can_manage_inventory?: boolean;
+  can_manage_employees?: boolean;
+  can_view_reports?: boolean;
+  can_manage_settings?: boolean;
+  [key: string]: boolean | undefined;
+}
+
 export interface Role {
   id: string;
   name: string;
   color?: string; // Hex code for badge
   is_system?: boolean; // To prevent deleting core roles if needed
+  permissions?: RolePermissions;
   created_at?: string;
 }
 

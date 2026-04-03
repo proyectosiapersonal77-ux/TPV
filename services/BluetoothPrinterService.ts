@@ -119,6 +119,27 @@ export class BluetoothPrinterService {
             throw error;
         }
     }
+    async openDrawer() {
+        if (!this.isConnected()) {
+            throw new Error('La impresora no está conectada.');
+        }
+
+        try {
+            // ESC p m t1 t2
+            // m = 0 (pin 2), t1 = 25, t2 = 250
+            const openDrawerCommand = new Uint8Array([27, 112, 0, 25, 250]);
+            
+            if (this.characteristic?.properties.writeWithoutResponse) {
+                await this.characteristic.writeValueWithoutResponse(openDrawerCommand);
+            } else {
+                await this.characteristic?.writeValue(openDrawerCommand);
+            }
+            return true;
+        } catch (error) {
+            console.error('Error abriendo cajón:', error);
+            throw error;
+        }
+    }
 }
 
 export const bluetoothPrinter = new BluetoothPrinterService();

@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, BarChart3, Calendar, Download, Printer, FileText, Banknote, CreditCard, Receipt, LayoutDashboard, PieChart as PieChartIcon, Star, HelpCircle, TrendingDown, TrendingUp } from 'lucide-react';
+import { ChevronLeft, BarChart3, Calendar, Download, Printer, FileText, Banknote, CreditCard, Receipt, LayoutDashboard, PieChart as PieChartIcon, Star, HelpCircle, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import { ViewState } from '../../types';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { db } from '../../db';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import TaxesReport from './TaxesReport';
+import { useAuthStore } from '../../stores/useAuthStore';
+import { voidOrder } from '../../services/orderService';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#6366f1'];
 
@@ -13,8 +15,31 @@ interface AnalyticsScreenProps {
 }
 
 export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
+    const { user, userRole } = useAuthStore();
+    const queryClient = useQueryClient();
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [activeTab, setActiveTab] = useState<'z-report' | 'dashboard' | 'taxes'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'z-report' | 'dashboard' | 'taxes' | 'tickets'>('dashboard');
+    const [voidTicketId, setVoidTicketId] = useState<string | null>(null);
+    const [voidReason, setVoidReason] = useState('');
+    const [isVoiding, setIsVoiding] = useState(false);
+
+    const handleVoidTicket = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!voidTicketId || !voidReason.trim() || !user) return;
+
+        setIsVoiding(true);
+        try {
+            await voidOrder(voidTicketId, user.id, voidReason);
+            await queryClient.invalidateQueries({ queryKey: ['z-report'] });
+            setVoidTicketId(null);
+            setVoidReason('');
+        } catch (error) {
+            console.error("Error voiding ticket:", error);
+            // Handle error (maybe a toast notification in a real app)
+        } finally {
+            setIsVoiding(false);
+        }
+    };
 
     const { data: reportData, isLoading } = useQuery({
         queryKey: ['z-report', date],
@@ -29,7 +54,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
             const orders = await db.orders
                 .filter(o => {
                     const orderDate = new Date(o.closed_at || o.created_at);
-                    return orderDate >= startOfDay && orderDate <= endOfDay && o.status === 'paid';
+                    return orderDate >= startOfDay && orderDate <= endOfDay && (o.status === 'paid' || o.status === 'voided');
                 })
                 .toArray();
 
@@ -235,7 +260,8 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                 salesByWaiter,
                 salesByZone,
                 salesByCategory,
-                bcgMatrix
+                bcgMatrix,
+                orders
             };
         }
     });
@@ -277,6 +303,12 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                 className={`text-sm font-bold pb-1 border-b-2 transition-colors ${activeTab === 'taxes' ? 'border-brand-accent text-white' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
                             >
                                 Impuestos
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('tickets')}
+                                className={`text-sm font-bold pb-1 border-b-2 transition-colors ${activeTab === 'tickets' ? 'border-brand-accent text-white' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+                            >
+                                Tickets Cerrados
                             </button>
                         </div>
                     </div>
@@ -581,6 +613,54 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                             </div>
                         )}
 
+                        {activeTab === 'tickets' && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold text-white mb-4">Tickets del Día</h2>
+                                {reportData.orders.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500 bg-brand-800 rounded-xl border border-brand-700">
+                                        No hay tickets para esta fecha.
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-4">
+                                        {reportData.orders.map((order: any) => (
+                                            <div key={order.id} className={`bg-brand-800 p-4 rounded-xl border ${order.status === 'voided' ? 'border-red-500/50 opacity-75' : 'border-brand-700'} flex justify-between items-center`}>
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="font-bold text-white">{order.invoice_number || order.id.slice(0, 8)}</span>
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                                                            order.status === 'voided' ? 'bg-red-500/20 text-red-400' :
+                                                            order.payment_method === 'cash' ? 'bg-green-500/20 text-green-400' : 
+                                                            order.payment_method === 'card' ? 'bg-blue-500/20 text-blue-400' : 
+                                                            'bg-gray-500/20 text-gray-400'
+                                                        }`}>
+                                                            {order.status === 'voided' ? 'ANULADO' : order.payment_method?.toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-sm text-gray-400">
+                                                        {new Date(order.closed_at || order.created_at).toLocaleTimeString()} • {order.items?.length || 0} artículos
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`text-xl font-mono font-bold ${order.status === 'voided' ? 'text-red-400 line-through' : 'text-white'}`}>
+                                                        {order.total.toFixed(2)}€
+                                                    </div>
+                                                    {order.status === 'paid' && (userRole?.permissions?.can_void_ticket || user?.role.toLowerCase() === 'admin') && (
+                                                        <button 
+                                                            onClick={() => setVoidTicketId(order.id)}
+                                                            className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 hover:border-red-500"
+                                                            title="Anular Ticket"
+                                                        >
+                                                            <XCircle size={20} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeTab === 'taxes' && (
                             <TaxesReport />
                         )}
@@ -731,6 +811,49 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                     }
                 }
             `}} />
+
+            {/* Void Ticket Modal */}
+            {voidTicketId && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-brand-900 border border-brand-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                            <XCircle className="text-red-400" />
+                            Anular Ticket
+                        </h3>
+                        <p className="text-gray-300 mb-4 text-sm">
+                            Por favor, indica el motivo de la anulación. Esta acción quedará registrada en el sistema.
+                        </p>
+                        <form onSubmit={handleVoidTicket}>
+                            <textarea
+                                value={voidReason}
+                                onChange={(e) => setVoidReason(e.target.value)}
+                                placeholder="Motivo de la anulación..."
+                                className="w-full bg-brand-800 border border-brand-600 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-accent mb-6 resize-none h-24"
+                                required
+                            />
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setVoidTicketId(null);
+                                        setVoidReason('');
+                                    }}
+                                    className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={!voidReason.trim() || isVoiding}
+                                    className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold transition-colors disabled:opacity-50"
+                                >
+                                    {isVoiding ? 'Anulando...' : 'Confirmar Anulación'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

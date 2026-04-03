@@ -9,7 +9,7 @@ interface AdminNavigationProps {
 }
 
 const AdminNavigation: React.FC<AdminNavigationProps> = ({ onNavigate, currentView }) => {
-    const { user } = useAuthStore();
+    const { user, userRole } = useAuthStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -23,7 +23,7 @@ const AdminNavigation: React.FC<AdminNavigationProps> = ({ onNavigate, currentVi
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    if (user?.role !== UserRole.ADMIN) return null;
+    if (!userRole?.permissions?.can_manage_settings && user?.role.toLowerCase() !== UserRole.ADMIN) return null;
 
     const handleNav = (view: ViewState) => {
         setIsMenuOpen(false);
