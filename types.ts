@@ -32,6 +32,10 @@ export interface Employee {
   role: string; // Changed from UserRole enum to string to support dynamic roles
   pin?: string; // Optional for security (never fetched in lists)
   active: boolean;
+  preferences?: {
+    soundsEnabled?: boolean;
+    [key: string]: any;
+  };
   created_at?: string;
 }
 

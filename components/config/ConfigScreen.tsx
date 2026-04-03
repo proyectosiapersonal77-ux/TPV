@@ -4,6 +4,7 @@ import UserManagement from './UserManagement';
 import TableManagement from './TableManagement';
 import PrinterManagement from './PrinterManagement';
 import RedsysManagement from './RedsysManagement';
+import GeneralManagement from './GeneralManagement';
 import AdminNavigation from '../AdminNavigation';
 import { ViewState } from '../../types';
 
@@ -54,10 +55,10 @@ const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onNavigate }) => {
 
           <button 
             onClick={() => setActiveView('general')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-not-allowed opacity-50 ${activeView === 'general' ? 'bg-brand-accent' : 'text-gray-400 hover:bg-brand-700'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeView === 'general' ? 'bg-brand-accent text-white shadow-lg shadow-brand-accent/20 font-medium' : 'text-gray-400 hover:bg-brand-700 hover:text-white'}`}
           >
-            <Database size={20} />
-            Datos (Próx.)
+            <Settings size={20} />
+            General
           </button>
           
            <button 
@@ -95,8 +96,9 @@ const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onNavigate }) => {
           {activeView === 'tables' && <TableManagement />}
           {activeView === 'printers' && <PrinterManagement />}
           {activeView === 'redsys' && <RedsysManagement />}
+          {activeView === 'general' && <GeneralManagement />}
           
-          {(activeView !== 'users' && activeView !== 'tables' && activeView !== 'printers' && activeView !== 'redsys') && (
+          {(activeView !== 'users' && activeView !== 'tables' && activeView !== 'printers' && activeView !== 'redsys' && activeView !== 'general') && (
             <div className="bg-brand-800 rounded-2xl border border-brand-700 shadow-xl h-full w-full flex flex-col items-center justify-center text-gray-500">
               <div className="border-2 border-dashed border-brand-600 rounded-3xl p-12 flex flex-col items-center">
                   <Settings size={48} className="mb-4 opacity-50" />

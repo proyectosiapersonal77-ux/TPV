@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, ViewState } from '../types';
-import { LogOut, ChefHat, Utensils, ShieldAlert, User, LayoutGrid, Package, Wifi, WifiOff, RefreshCw, Settings, Banknote, BarChart3 } from 'lucide-react';
+import { LogOut, ChefHat, Utensils, ShieldAlert, User, LayoutGrid, Package, Wifi, WifiOff, RefreshCw, Settings, Banknote, BarChart3, Volume2, VolumeX, X, Save } from 'lucide-react';
 import { syncDatabase, processSyncQueue } from '../services/syncService';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../Supabase';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -11,10 +12,13 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
-  const { user, userRole } = useAuthStore();
+  const { user, userRole, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncing, setSyncing] = useState(false);
+  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+  const [soundsEnabled, setSoundsEnabled] = useState(user?.preferences?.soundsEnabled !== false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
       const handleStatusChange = () => setIsOnline(navigator.onLine);
@@ -44,6 +48,40 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
     if (r === UserRole.ADMIN || r.includes('admin') || r.includes('encargad') || userRole?.permissions?.can_manage_settings) return <ShieldAlert className="w-12 h-12 mb-2 text-red-400" />;
     
     return <User className="w-12 h-12 mb-2 text-blue-400" />;
+  };
+
+  const handleSavePreferences = async () => {
+      if (!user) return;
+      setSavingPrefs(true);
+      try {
+          const newPreferences = { ...user.preferences, soundsEnabled };
+          const updatedUser = { ...user, preferences: newPreferences };
+          
+          // Update local DB first for immediate effect and offline support
+          const { db } = await import('../db');
+          await db.employees.update(user.id, { preferences: newPreferences });
+          
+          // Try to update Supabase if online
+          if (navigator.onLine) {
+              const { error } = await supabase
+                  .from('employees')
+                  .update({ preferences: newPreferences })
+                  .eq('id', user.id);
+                  
+              if (error) {
+                  console.error("Error syncing preferences to Supabase", error);
+                  // Don't throw, we already saved locally
+              }
+          }
+          
+          updateUser(updatedUser);
+          setShowPreferencesModal(false);
+      } catch (err) {
+          console.error("Error saving preferences", err);
+          alert("Error al guardar preferencias");
+      } finally {
+          setSavingPrefs(false);
+      }
   };
 
   if (!user) return null;
@@ -80,6 +118,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
               <p className="font-medium text-white">{user.name}</p>
               <p className="text-xs text-brand-accent font-bold uppercase">{user.role}</p>
            </div>
+           
+           <button 
+             onClick={() => setShowPreferencesModal(true)}
+             className="bg-brand-700 hover:bg-brand-600 text-gray-200 border border-brand-600 p-2.5 rounded-lg transition-colors shadow-lg active:scale-95"
+             title="Preferencias"
+           >
+               <User size={20} />
+           </button>
            
            {/* Direct Config Button for Admins instead of Navigation Menu */}
            {(userRole?.permissions?.can_manage_settings || user.role.toLowerCase() === UserRole.ADMIN) && (
@@ -168,6 +214,60 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
       <div className="text-center text-brand-700 text-xs mt-6">
          ID de Sesión: {user.id}
       </div>
+      
+      {showPreferencesModal && (
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+              <div className="bg-brand-800 border border-brand-600 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+                  <div className="p-4 border-b border-brand-700 flex justify-between items-center bg-brand-900/50">
+                      <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                          <User size={20} className="text-brand-accent" />
+                          Mis Preferencias
+                      </h3>
+                      <button onClick={() => setShowPreferencesModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                          <X size={24} />
+                      </button>
+                  </div>
+                  <div className="p-6 space-y-6">
+                      <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                          <div className="flex items-center gap-4">
+                              <div className={`p-3 rounded-xl ${soundsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
+                                  {soundsEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
+                              </div>
+                              <div>
+                                  <h4 className="font-bold text-white">Sonidos</h4>
+                                  <p className="text-sm text-gray-400">Activar feedback auditivo</p>
+                              </div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                  type="checkbox" 
+                                  className="sr-only peer"
+                                  checked={soundsEnabled}
+                                  onChange={(e) => setSoundsEnabled(e.target.checked)}
+                              />
+                              <div className="w-14 h-7 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-brand-accent"></div>
+                          </label>
+                      </div>
+                  </div>
+                  <div className="p-4 border-t border-brand-700 bg-brand-900/50 flex justify-end gap-3">
+                      <button 
+                          onClick={() => setShowPreferencesModal(false)}
+                          className="px-4 py-2 rounded-xl border border-brand-600 text-gray-300 hover:bg-brand-700 transition-colors"
+                      >
+                          Cancelar
+                      </button>
+                      <button 
+                          onClick={handleSavePreferences}
+                          disabled={savingPrefs}
+                          className="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accentHover text-white font-bold flex items-center gap-2 transition-colors disabled:opacity-50"
+                      >
+                          <Save size={18} />
+                          {savingPrefs ? 'Guardando...' : 'Guardar'}
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };

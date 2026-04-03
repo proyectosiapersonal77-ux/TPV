@@ -15,6 +15,7 @@
     "@types/uuid": "^10.0.0",
     "dexie": "^3.2.4",
     "lucide-react": "^0.562.0",
+    "motion": "^12.38.0",
     "react": "^19.2.3",
     "react-barcode": "^1.6.1",
     "react-dom": "^19.2.3",

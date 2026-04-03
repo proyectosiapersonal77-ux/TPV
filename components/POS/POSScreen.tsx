@@ -16,6 +16,8 @@ import { bluetoothPrinter } from '../../services/BluetoothPrinterService';
 import { redsysService } from '../../services/RedsysService';
 import { supabase } from '../../Supabase';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { motion, AnimatePresence } from 'motion/react';
+import { soundService } from '../../utils/sounds';
 
 interface POSScreenProps {
   table: Table;
@@ -102,6 +104,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
 
   // --- CART LOGIC ---
   const handleProductClick = (product: Product) => {
+      soundService.playClick();
       const modifiers = InventoryService.getProductModifiers(product);
       const hasRequiredModifiers = modifiers.some(m => m.is_required);
       if ((product.variants && product.variants.length > 0) || hasRequiredModifiers) {
@@ -295,11 +298,13 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
 
           await OrderService.addItemsToOrder(orderId, itemsToSend, employeeId);
           
+          soundService.playSuccess();
           clearCart();
           refetchOrder();
           setShowMobileCart(false);
 
       } catch (err: any) {
+          soundService.playError();
           console.error("Error sending order", err);
           setError("Error al enviar a cocina: " + err.message);
       } finally {
@@ -1118,8 +1123,15 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                     <div className="text-xs font-bold text-brand-accent uppercase tracking-wider px-2 py-1 mb-1 flex items-center gap-2 animate-pulse">
                         <ShoppingCart size={12} /> Nuevo Pedido
                     </div>
+                    <AnimatePresence initial={false}>
                     {cart.map((item, idx) => (
-                        <div key={item.tempId} className="flex flex-col p-3 rounded-lg bg-brand-700 border border-brand-600 mb-2 animate-in slide-in-from-right-2 duration-300">
+                        <motion.div 
+                            key={item.tempId} 
+                            initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                            className="flex flex-col p-3 rounded-lg bg-brand-700 border border-brand-600 mb-2"
+                        >
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex-1">
                                     <span className="font-bold text-white text-base block leading-tight">
@@ -1143,14 +1155,15 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                             
                             <div className="flex items-center justify-between bg-brand-800/60 rounded-lg p-1.5 border border-brand-700/50">
                                 <div className="flex items-center gap-3">
-                                    <button onClick={() => updateQuantity(idx, -1)} className="w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 border border-brand-500 text-white rounded-lg transition-colors active:scale-95 shadow-sm"><Minus size={18}/></button>
+                                    <button onClick={() => { soundService.playClick(); updateQuantity(idx, -1); }} className="w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 border border-brand-500 text-white rounded-lg transition-colors active:scale-95 shadow-sm"><Minus size={18}/></button>
                                     <span className="font-bold text-xl w-8 text-center text-white">{item.quantity}</span>
-                                    <button onClick={() => updateQuantity(idx, 1)} className="w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 border border-brand-500 text-white rounded-lg transition-colors active:scale-95 shadow-sm"><Plus size={18}/></button>
+                                    <button onClick={() => { soundService.playClick(); updateQuantity(idx, 1); }} className="w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 border border-brand-500 text-white rounded-lg transition-colors active:scale-95 shadow-sm"><Plus size={18}/></button>
                                 </div>
-                                <button onClick={() => removeItem(idx)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 hover:border-red-500 rounded-lg transition-all active:scale-95"><Trash2 size={18}/></button>
+                                <button onClick={() => { soundService.playError(); removeItem(idx); }} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 hover:border-red-500 rounded-lg transition-all active:scale-95"><Trash2 size={18}/></button>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
+                    </AnimatePresence>
                 </div>
             )}
 
@@ -1316,13 +1329,14 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
              <div className="flex-1 overflow-y-auto p-3 md:p-4 pb-28 md:pb-4">
                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                      {filteredProducts.map(product => (
-                         <button 
+                         <motion.button 
                             key={product.id}
                             onClick={() => handleProductClick(product)}
+                            whileTap={{ scale: 0.95 }}
                             className={`
                                 border-2 border-brand-700 hover:border-brand-accent active:bg-brand-700
                                 rounded-xl p-3 md:p-4 flex flex-col items-start justify-between
-                                gap-2 md:gap-3 transition-all active:scale-95 h-28 md:h-32
+                                gap-2 md:gap-3 transition-colors h-28 md:h-32
                                 relative overflow-hidden group shadow-sm
                                 ${product.image_url ? 'bg-brand-900' : 'bg-brand-800'}
                             `}
@@ -1357,7 +1371,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                             <div className="w-full flex justify-between items-end relative z-10">
                                 <span className="font-bold text-brand-accent text-base md:text-lg drop-shadow-sm">{product.selling_price.toFixed(2)}€</span>
                             </div>
-                         </button>
+                         </motion.button>
                      ))}
                  </div>
              </div>
@@ -1533,6 +1547,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                 hasVariants={hasVariants}
                 onClose={() => setVariantModalOpen(false)} 
                 onAdd={(product, variant, notes, extraPrice) => {
+                    soundService.playClick();
                     const category = categories.find(c => c.id === product.category_id);
                     const courseName = category ? category.name : 'otros';
                     addItem(product, variant, 1, notes, extraPrice, courseName);
