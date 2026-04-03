@@ -43,6 +43,19 @@ const App: React.FC = () => {
   useEffect(() => {
     setIsConfigured(checkSupabaseConnection());
     
+    // Load White-label settings
+    const storedColor = localStorage.getItem('brandPrimaryColor');
+    if (storedColor) {
+        document.documentElement.style.setProperty('--brand-accent', storedColor);
+        document.documentElement.style.setProperty('--brand-accentHover', storedColor);
+    }
+    const storedTheme = localStorage.getItem('themeMode');
+    if (storedTheme === 'light') {
+        document.documentElement.classList.add('light-mode');
+    } else {
+        document.documentElement.classList.remove('light-mode');
+    }
+    
     // Initial Sync on App Start
     const initSync = async () => {
         setIsSyncing(true);

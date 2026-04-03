@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
@@ -15,11 +16,13 @@
             },
             colors: {
               brand: {
-                900: '#0f172a', // Slate 900
-                800: '#1e293b', // Slate 800
-                700: '#334155', // Slate 700
-                accent: '#d97706', // Amber 600
-                accentHover: '#b45309', // Amber 700
+                900: 'var(--brand-900)',
+                800: 'var(--brand-800)',
+                700: 'var(--brand-700)',
+                600: 'var(--brand-600)',
+                500: 'var(--brand-500)',
+                accent: 'var(--brand-accent)',
+                accentHover: 'var(--brand-accentHover)',
               }
             }
           }
@@ -27,13 +30,93 @@
       }
     </script>
     <style>
+      :root {
+        /* Default Dark Mode Colors */
+        --brand-900: #0f172a;
+        --brand-800: #1e293b;
+        --brand-700: #334155;
+        --brand-600: #475569;
+        --brand-500: #64748b;
+        --brand-accent: #d97706;
+        --brand-accentHover: #b45309;
+        
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --bg-primary: #0f172a;
+      }
+      
+      .light-mode {
+        /* Light Mode Colors */
+        --brand-900: #f8fafc;
+        --brand-800: #ffffff;
+        --brand-700: #e2e8f0;
+        --brand-600: #cbd5e1;
+        --brand-500: #94a3b8;
+        
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --bg-primary: #f8fafc;
+      }
+
+      .light-mode .text-white {
+        color: var(--text-primary);
+      }
+      .light-mode .text-gray-400 {
+        color: var(--text-secondary);
+      }
+      .light-mode .text-gray-300 {
+        color: #334155;
+      }
+      
+      /* Keep buttons and colored badges white text */
+      .light-mode .bg-brand-accent,
+      .light-mode .bg-brand-accentHover,
+      .light-mode .bg-green-500,
+      .light-mode .bg-green-600,
+      .light-mode .bg-green-700,
+      .light-mode .bg-blue-500,
+      .light-mode .bg-blue-600,
+      .light-mode .bg-blue-700,
+      .light-mode .bg-red-500,
+      .light-mode .bg-red-600,
+      .light-mode .bg-orange-500,
+      .light-mode .bg-orange-600,
+      .light-mode .bg-orange-700,
+      .light-mode .bg-purple-600,
+      .light-mode .bg-purple-700,
+      .light-mode .bg-gray-700,
+      .light-mode .bg-gray-900 {
+        color: #ffffff !important;
+      }
+      
+      .light-mode .bg-brand-accent .text-white,
+      .light-mode .bg-brand-accentHover .text-white,
+      .light-mode .bg-green-500 .text-white,
+      .light-mode .bg-green-600 .text-white,
+      .light-mode .bg-green-700 .text-white,
+      .light-mode .bg-blue-500 .text-white,
+      .light-mode .bg-blue-600 .text-white,
+      .light-mode .bg-blue-700 .text-white,
+      .light-mode .bg-red-500 .text-white,
+      .light-mode .bg-red-600 .text-white,
+      .light-mode .bg-orange-500 .text-white,
+      .light-mode .bg-orange-600 .text-white,
+      .light-mode .bg-orange-700 .text-white,
+      .light-mode .bg-purple-600 .text-white,
+      .light-mode .bg-purple-700 .text-white,
+      .light-mode .bg-gray-700 .text-white,
+      .light-mode .bg-gray-900 .text-white {
+        color: #ffffff !important;
+      }
+
       /* Disable double-tap zoom on buttons */
       button {
         touch-action: manipulation;
       }
       body {
-        background-color: #0f172a;
-        color: #f1f5f9;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
       .hide-scrollbar::-webkit-scrollbar {
         display: none;

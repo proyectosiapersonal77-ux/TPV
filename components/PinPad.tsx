@@ -11,6 +11,7 @@ interface PinPadProps {
 
 const PinPad: React.FC<PinPadProps> = ({ onSuccess, isLoading, error, clearError }) => {
   const [pin, setPin] = useState<string>('');
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
   
   // Use a ref to hold the latest callback. This allows us to call it in useEffect
   // without adding it to the dependency array, preventing infinite loops if the parent
@@ -20,6 +21,16 @@ const PinPad: React.FC<PinPadProps> = ({ onSuccess, isLoading, error, clearError
   useEffect(() => {
     onSuccessRef.current = onSuccess;
   }, [onSuccess]);
+
+  useEffect(() => {
+      const loadLogo = () => {
+          const storedLogo = localStorage.getItem('brandLogo');
+          setLogoBase64(storedLogo);
+      };
+      loadLogo();
+      window.addEventListener('brandUpdated', loadLogo);
+      return () => window.removeEventListener('brandUpdated', loadLogo);
+  }, []);
 
   const handleNumberClick = (num: string, e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -66,7 +77,10 @@ const PinPad: React.FC<PinPadProps> = ({ onSuccess, isLoading, error, clearError
     <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto p-4 lg:p-0">
       
       {/* Top Section: Clock & Logo */}
-      <div className="mb-8">
+      <div className="mb-8 flex flex-col items-center">
+        {logoBase64 && (
+            <img src={logoBase64} alt="Logo" className="h-20 w-auto object-contain mb-4" />
+        )}
         <CurrentTime />
       </div>
 

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Users, Settings, Database, Printer, LayoutGrid, CreditCard } from 'lucide-react';
+import { ArrowLeft, Users, Settings, Database, Printer, LayoutGrid, CreditCard, Palette } from 'lucide-react';
 import UserManagement from './UserManagement';
 import TableManagement from './TableManagement';
 import PrinterManagement from './PrinterManagement';
 import RedsysManagement from './RedsysManagement';
 import GeneralManagement from './GeneralManagement';
+import WhiteLabelManagement from './WhiteLabelManagement';
 import AdminNavigation from '../AdminNavigation';
 import { ViewState } from '../../types';
 
@@ -13,7 +14,7 @@ interface ConfigScreenProps {
   onNavigate: (view: ViewState) => void;
 }
 
-type ConfigView = 'users' | 'tables' | 'general' | 'printers' | 'redsys';
+type ConfigView = 'users' | 'tables' | 'general' | 'printers' | 'redsys' | 'whitelabel';
 
 const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onNavigate }) => {
   const [activeView, setActiveView] = useState<ConfigView>('users');
@@ -76,6 +77,14 @@ const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onNavigate }) => {
             <CreditCard size={20} />
             Datáfono (Redsys)
           </button>
+
+          <button 
+            onClick={() => setActiveView('whitelabel')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeView === 'whitelabel' ? 'bg-brand-accent text-white shadow-lg shadow-brand-accent/20 font-medium' : 'text-gray-400 hover:bg-brand-700 hover:text-white'}`}
+          >
+            <Palette size={20} />
+            Marca Blanca
+          </button>
         </nav>
 
         <div className="p-4 border-t border-brand-700 mt-auto">
@@ -97,8 +106,9 @@ const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onNavigate }) => {
           {activeView === 'printers' && <PrinterManagement />}
           {activeView === 'redsys' && <RedsysManagement />}
           {activeView === 'general' && <GeneralManagement />}
+          {activeView === 'whitelabel' && <WhiteLabelManagement />}
           
-          {(activeView !== 'users' && activeView !== 'tables' && activeView !== 'printers' && activeView !== 'redsys' && activeView !== 'general') && (
+          {(activeView !== 'users' && activeView !== 'tables' && activeView !== 'printers' && activeView !== 'redsys' && activeView !== 'general' && activeView !== 'whitelabel') && (
             <div className="bg-brand-800 rounded-2xl border border-brand-700 shadow-xl h-full w-full flex flex-col items-center justify-center text-gray-500">
               <div className="border-2 border-dashed border-brand-600 rounded-3xl p-12 flex flex-col items-center">
                   <Settings size={48} className="mb-4 opacity-50" />

@@ -19,15 +19,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const [soundsEnabled, setSoundsEnabled] = useState(user?.preferences?.soundsEnabled !== false);
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
 
   useEffect(() => {
       const handleStatusChange = () => setIsOnline(navigator.onLine);
       window.addEventListener('online', handleStatusChange);
       window.addEventListener('offline', handleStatusChange);
       
+      // Load logo
+      const loadLogo = () => {
+          const storedLogo = localStorage.getItem('brandLogo');
+          setLogoBase64(storedLogo);
+      };
+      loadLogo();
+      window.addEventListener('brandUpdated', loadLogo);
+      
       return () => {
           window.removeEventListener('online', handleStatusChange);
           window.removeEventListener('offline', handleStatusChange);
+          window.removeEventListener('brandUpdated', loadLogo);
       };
   }, []);
 
@@ -90,8 +100,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
     <div className="flex flex-col h-screen p-6">
       {/* Top Bar */}
       <header className="flex justify-between items-center bg-brand-800 p-4 rounded-xl shadow-lg border border-brand-700 mb-6 relative z-50">
-        <div>
-          <h1 className="text-xl font-bold text-white">GastroPOS</h1>
+        <div className="flex items-center gap-4">
+          {logoBase64 ? (
+              <img src={logoBase64} alt="Logo" className="h-10 w-auto object-contain" />
+          ) : (
+              <h1 className="text-xl font-bold text-white">GastroPOS</h1>
+          )}
           <div className="flex items-center gap-2 mt-1">
              {isOnline ? (
                  <div className="flex items-center gap-1 text-green-400">
