@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, Grid, ShoppingCart, 
   Trash2, Send, CreditCard, ChevronLeft, Plus, Minus, X,
-  Utensils, Loader2, Tag, AlertCircle, Split, Users, Calculator, CheckCircle2, ArrowRight, ArrowRightLeft, Layers, Banknote, Printer, MoreVertical
+  Utensils, Loader2, Tag, AlertCircle, Split, Users, Calculator, CheckCircle2, ArrowRight, ArrowRightLeft, Layers, Banknote, Printer, MoreVertical, Monitor
 } from 'lucide-react';
 import { Product, Order, Table, ProductVariant, OrderItem, ViewState } from '../../types';
 import * as InventoryService from '../../services/inventoryService';
@@ -57,6 +57,42 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
       queryFn: () => OrderService.getActiveOrderForTable(table.id)
       // Removed refetchInterval for Supabase Realtime
   });
+
+  // Broadcast live state to CFD
+  useEffect(() => {
+      const channel = new BroadcastChannel(`cfd-sync-${table.id}`);
+      
+      // Combine current order and cart
+      const combinedItems = [...(currentOrder?.items || [])];
+      cart.forEach(cartItem => {
+          combinedItems.push({
+              id: cartItem.tempId,
+              order_id: currentOrder?.id || 'temp',
+              product_id: cartItem.product.id,
+              product_name: cartItem.product.name + (cartItem.variant ? ` (${cartItem.variant.name})` : ''),
+              quantity: cartItem.quantity,
+              price: cartItem.price,
+              status: 'pending',
+              notes: cartItem.notes,
+              course: cartItem.course,
+              created_at: new Date().toISOString()
+          } as any);
+      });
+
+      const total = (currentOrder?.total || 0) + cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+      const liveOrder = {
+          ...currentOrder,
+          id: currentOrder?.id || 'temp',
+          table_id: table.id,
+          items: combinedItems,
+          total: total
+      };
+
+      channel.postMessage({ type: 'SYNC_ORDER', order: liveOrder });
+
+      return () => channel.close();
+  }, [currentOrder, cart, table.id]);
 
   useEffect(() => {
       const channel = supabase
@@ -1008,6 +1044,16 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
             <div className="flex items-center gap-1">
                 {currentOrder && (
                     <>
+                        <button 
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                window.open(`/?view=cfd&tableId=${table.id}`, '_blank', 'width=800,height=600');
+                            }}
+                            className="p-2 text-gray-400 hover:text-brand-accent hover:bg-brand-800 rounded-full transition-colors"
+                            title="Abrir Visor de Cliente (CFD)"
+                        >
+                            <Monitor size={20} />
+                        </button>
                         <button 
                             onClick={(e) => { e.stopPropagation(); handlePrintTicket(); }}
                             className="p-2 text-gray-400 hover:text-brand-accent hover:bg-brand-800 rounded-full transition-colors"

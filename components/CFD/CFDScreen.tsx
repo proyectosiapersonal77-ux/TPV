@@ -27,6 +27,12 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
     if (storedLogo) {
       setLogoBase64(storedLogo);
     }
+
+    const params = new URLSearchParams(window.location.search);
+    const tableIdParam = params.get('tableId');
+    if (tableIdParam) {
+        setSelectedTableId(tableIdParam);
+    }
   }, []);
 
   useEffect(() => {
@@ -50,8 +56,17 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
       })
       .subscribe();
 
+    // Listen to local BroadcastChannel for live cart updates from POS
+    const channel = new BroadcastChannel(`cfd-sync-${selectedTableId}`);
+    channel.onmessage = (event) => {
+        if (event.data.type === 'SYNC_ORDER') {
+            setCurrentOrder(event.data.order);
+        }
+    };
+
     return () => {
       supabase.removeChannel(orderSubscription);
+      channel.close();
     };
   }, [selectedTableId]);
 

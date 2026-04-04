@@ -44,6 +44,15 @@ const App: React.FC = () => {
   useEffect(() => {
     setIsConfigured(checkSupabaseConnection());
     
+    // Check URL parameters for direct routing (e.g., CFD)
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view') as ViewState;
+    if (viewParam === 'cfd') {
+        setCurrentView('cfd');
+        // We might need to bypass auth for CFD if it's meant to be a standalone display,
+        // but for now we'll let it render if we adjust the auth check below.
+    }
+
     // Load White-label settings
     const storedColor = localStorage.getItem('brandPrimaryColor');
     if (storedColor) {
@@ -192,7 +201,7 @@ const App: React.FC = () => {
   }
 
   // CFD
-  if (currentView === 'cfd' && isAuthenticated) {
+  if (currentView === 'cfd') {
       return (
         <Suspense fallback={<LoadingFallback />}>
           <CFDScreen onNavigate={handleNavigate} />
