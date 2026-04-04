@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, ViewState } from '../types';
-import { LogOut, ChefHat, Utensils, ShieldAlert, User, LayoutGrid, Package, Wifi, WifiOff, RefreshCw, Settings, Banknote, BarChart3, Volume2, VolumeX, X, Save } from 'lucide-react';
+import { LogOut, ChefHat, Utensils, ShieldAlert, User, LayoutGrid, Package, Wifi, WifiOff, RefreshCw, Settings, Banknote, BarChart3, Volume2, VolumeX, X, Save, Monitor } from 'lucide-react';
 import { syncDatabase, processSyncQueue } from '../services/syncService';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
@@ -189,6 +189,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                   <ChefHat size={32} />
                   Cocina
                   <span className="text-xs font-normal opacity-80">Ver Comandas (KDS)</span>
+               </button>
+               
+               <button 
+                  onClick={() => onNavigate('cfd')}
+                  className="w-full bg-teal-700 hover:bg-teal-600 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-teal-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+               >
+                  <Monitor size={32} />
+                  Visor de Cliente
+                  <span className="text-xs font-normal opacity-80">Pantalla CFD</span>
                </button>
                
                {user.role === UserRole.ADMIN && (

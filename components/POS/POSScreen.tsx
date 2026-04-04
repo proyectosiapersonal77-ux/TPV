@@ -991,7 +991,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
         <div className="p-4 bg-brand-900 border-b border-brand-700 shrink-0 flex justify-between items-center">
             {/* Make table number clickable to go back */}
             <div 
-                onClick={() => showMobileCart ? setShowMobileCart(false) : onBack()} 
+                onClick={() => showMobileCart ? setShowMobileCart(false) : handleBack()} 
                 className="cursor-pointer group select-none hover:opacity-80 transition-opacity"
             >
                 <div className="flex justify-between items-center mb-1">
@@ -1223,6 +1223,17 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
     </div>
   );
 
+  const handleBack = async () => {
+      if (currentOrder && (!currentOrder.items || currentOrder.items.length === 0)) {
+          try {
+              await OrderService.voidOrder(currentOrder.id, employeeId, "Empty order auto-cancelled");
+          } catch (e) {
+              console.error("Failed to void empty order", e);
+          }
+      }
+      onBack();
+  };
+
   if (loadingProducts) return <div className="flex items-center justify-center h-screen bg-brand-900 text-white"><Loader2 className="animate-spin mr-2"/> Cargando TPV...</div>;
 
   return (
@@ -1230,7 +1241,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
         
         {/* === LEFT SIDEBAR (Desktop Only) === */}
         <div className="hidden md:flex w-24 md:w-32 bg-brand-800 border-r border-brand-700 flex-col shrink-0 overflow-y-auto no-scrollbar z-10">
-            <button onClick={onBack} className="p-4 bg-brand-900 border-b border-brand-700 hover:bg-brand-700 transition-colors flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-white sticky top-0 z-10">
+            <button onClick={handleBack} className="p-4 bg-brand-900 border-b border-brand-700 hover:bg-brand-700 transition-colors flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-white sticky top-0 z-10">
                 <ChevronLeft size={24} />
                 <span className="text-[10px] uppercase font-bold">Salir</span>
             </button>
@@ -1258,7 +1269,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
              
              {/* Header Mobile: Exit + Search */}
              <div className="md:hidden flex items-center p-2 gap-2 bg-brand-800 border-b border-brand-700 shrink-0">
-                 <button onClick={onBack} className="flex items-center gap-2 p-1 pr-2 rounded-lg hover:bg-brand-700 text-gray-400 hover:text-white transition-colors">
+                 <button onClick={handleBack} className="flex items-center gap-2 p-1 pr-2 rounded-lg hover:bg-brand-700 text-gray-400 hover:text-white transition-colors">
                     <ChevronLeft size={24}/>
                     <span className="bg-brand-accent text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
                         {table.name.replace(/\D/g, '') || '#'}
@@ -1428,7 +1439,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                                 onClick={async () => {
                                     setProcessing(true);
                                     try {
-                                        await OrderService.deleteOrderItem(currentOrder!.id, itemToDelete.id, employeeId || 'system');
+                                        await OrderService.deleteOrderItem(currentOrder!.id, itemToDelete.id, employeeId || 'system', itemToDelete);
                                         refetchOrder();
                                         setItemToDelete(null);
                                     } catch (e) {

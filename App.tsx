@@ -17,6 +17,7 @@ const POSScreen = React.lazy(() => import('./components/POS/POSScreen'));
 const KitchenDisplay = React.lazy(() => import('./components/Kitchen/KitchenDisplay'));
 const CashRegisterScreen = React.lazy(() => import('./components/CashRegister/CashRegisterScreen'));
 const AnalyticsScreen = React.lazy(() => import('./components/Analytics/AnalyticsScreen'));
+const CFDScreen = React.lazy(() => import('./components/CFD/CFDScreen'));
 
 const LoadingFallback = () => (
   <div className="flex-1 flex items-center justify-center h-screen bg-[#1A1A1A] text-white">
@@ -186,6 +187,15 @@ const App: React.FC = () => {
       return (
         <Suspense fallback={<LoadingFallback />}>
           <AnalyticsScreen onNavigate={handleNavigate} />
+        </Suspense>
+      );
+  }
+
+  // CFD
+  if (currentView === 'cfd' && isAuthenticated) {
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <CFDScreen onNavigate={handleNavigate} />
         </Suspense>
       );
   }

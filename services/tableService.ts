@@ -59,18 +59,17 @@ export const joinTables = async (parentTableId: string, childTableIds: string[],
     const parentOrder = await getActiveOrderForTable(parentTableId);
     let masterOrderId = parentOrder?.id;
 
-    // If parent has no order, create one immediately
-    if (!masterOrderId) {
-        const newOrder = await createOrder(parentTableId, employeeId);
-        masterOrderId = newOrder.id;
-    }
-
     // 2. Loop through children to merge orders and link tables
     for (const childId of childTableIds) {
         const childOrder = await getActiveOrderForTable(childId);
         const childTable = await db.restaurantTables.get(childId);
         
         if (childOrder) {
+            // If parent has no order yet, but a child does, create the master order now
+            if (!masterOrderId) {
+                const newOrder = await createOrder(parentTableId, employeeId);
+                masterOrderId = newOrder.id;
+            }
             // Merge orders with traceability
             await mergeOrders(masterOrderId!, childOrder.id, childTable?.name || 'Unknown');
         }

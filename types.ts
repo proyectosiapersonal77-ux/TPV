@@ -339,4 +339,4 @@ export interface Promotion {
 }
 
 // --- APP VIEW STATE ---
-export type ViewState = 'login' | 'dashboard' | 'config' | 'tables' | 'inventory' | 'pos' | 'kitchen' | 'cash_register' | 'analytics';
+export type ViewState = 'login' | 'dashboard' | 'config' | 'tables' | 'inventory' | 'pos' | 'kitchen' | 'cash_register' | 'analytics' | 'cfd';

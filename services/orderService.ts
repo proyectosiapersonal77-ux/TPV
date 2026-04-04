@@ -30,30 +30,39 @@ export const getActiveOrderForTable = async (tableId: string): Promise<Order | n
             .select(`*, items:order_items(*)`)
             .eq('table_id', targetTableId)
             .eq('status', 'open')
-            .maybeSingle();
-        remoteOrder = data;
+            .order('created_at', { ascending: true })
+            .limit(1);
+            
+        if (data && data.length > 0) {
+            remoteOrder = data[0];
+        }
     }
 
     // 2. Fetch Local Candidate
-    const localOrder = await db.orders
+    let localOrder = await db.orders
         .where('table_id').equals(targetTableId)
         .filter((o: any) => o.status === 'open')
-        .last();
+        .first();
 
     // 3. Merge Logic
     if (remoteOrder) {
-        if (localOrder && localOrder.id === remoteOrder.id) {
-            if (localOrder.status === 'paid') return null;
+        // Check the local status of the remote order specifically
+        const localVersionOfRemote = await db.orders.get(remoteOrder.id);
+        if (localVersionOfRemote) {
+            if (localVersionOfRemote.status === 'paid' || localVersionOfRemote.status === 'voided' || localVersionOfRemote.status === 'closed') {
+                return null; // It was paid/voided locally, but remote hasn't synced yet
+            }
             return {
                 ...remoteOrder,
-                total: localOrder.total ?? remoteOrder.total,
-                items: (localOrder.items && localOrder.items.length > 0) ? localOrder.items : remoteOrder.items
+                total: localVersionOfRemote.total ?? remoteOrder.total,
+                items: localVersionOfRemote.items !== undefined ? localVersionOfRemote.items : remoteOrder.items
             } as Order;
         }
         return remoteOrder as Order;
     }
 
     if (localOrder) {
+        if (localOrder.status === 'paid' || localOrder.status === 'voided' || localOrder.status === 'closed') return null;
         return localOrder as Order;
     }
 
@@ -168,8 +177,45 @@ export const getOpenOrders = async (): Promise<{id: string, table_id: string, to
     }
 
     // 3. Add Local-Only Open Orders (Created offline or not yet synced)
+    // We must be careful not to include orders that were paid remotely but are still 'open' locally.
+    // If we are online, and a local order is 'open' but NOT in combinedOrders, it means:
+    // a) It was created offline and hasn't synced yet (should be included)
+    // b) It was paid remotely, and we haven't synced the 'paid' status down yet (should NOT be included)
+    // To distinguish, we can check if the order exists in Supabase at all.
+    // But that requires another query.
+    // A simpler approach: if we are online, we trust the remote open orders list for any order that exists remotely.
+    // If a local order is 'open' but not in remote open orders, we only include it if it was created recently (e.g. last 24h) AND it doesn't exist remotely.
+    // Actually, if we are online, we can just fetch the status of these missing local orders.
+    
+    let localNewOrders = [];
     const remoteIds = new Set(combinedOrders.map(o => o.id));
-    const localNewOrders = localOrders.filter((l: any) => l.status === 'open' && !remoteIds.has(l.id));
+    const localOpenCandidates = localOrders.filter((l: any) => l.status === 'open' && !remoteIds.has(l.id));
+    
+    if (navigator.onLine && localOpenCandidates.length > 0) {
+        // Check if these candidates exist remotely and are paid
+        const candidateIds = localOpenCandidates.map(o => o.id);
+        const { data: remoteStatus } = await supabase.from('orders').select('id, status').in('id', candidateIds);
+        
+        if (remoteStatus) {
+            const remoteStatusMap = new Map(remoteStatus.map(r => [r.id, r.status]));
+            localNewOrders = localOpenCandidates.filter(l => {
+                const rStatus = remoteStatusMap.get(l.id);
+                // If it doesn't exist remotely, it's a true local new order.
+                // If it exists remotely and is open, it would have been in combinedOrders (unless it was just created).
+                // If it exists remotely and is paid/closed, we should NOT include it, and we should probably update local DB.
+                if (rStatus === 'paid' || rStatus === 'closed' || rStatus === 'voided') {
+                    // Update local DB to fix the desync
+                    db.orders.update(l.id, { status: rStatus }).catch(console.error);
+                    return false;
+                }
+                return true;
+            });
+        } else {
+            localNewOrders = localOpenCandidates;
+        }
+    } else {
+        localNewOrders = localOpenCandidates;
+    }
     
     return [...combinedOrders, ...localNewOrders].map((o: any) => ({
         id: o.id,
@@ -183,6 +229,12 @@ export const createOrder = async (tableId: string, employeeId: string): Promise<
     // Check if table is child, if so, redirect to parent
     const table = await db.restaurantTables.get(tableId);
     const finalTableId = (table && table.parent_id) ? table.parent_id : tableId;
+
+    // Prevent duplicate open orders
+    const existingOrder = await getActiveOrderForTable(finalTableId);
+    if (existingOrder) {
+        return existingOrder;
+    }
 
     const newOrderId = uuidv4();
     const newOrder: any = {
@@ -310,25 +362,35 @@ export const updateOrderItemStatus = async (itemId: string, status: OrderItemSta
 };
 
 // Delete Order Item
-export const deleteOrderItem = async (orderId: string, itemId: string, employeeId: string): Promise<void> => {
+export const deleteOrderItem = async (orderId: string, itemId: string, employeeId: string, itemDetails?: any): Promise<void> => {
     const order = await db.orders.get(orderId);
-    if (!order || !order.items) return;
+    let itemToDelete = itemDetails;
+    let newTotal = 0;
 
-    const itemToDelete = order.items.find(i => i.id === itemId);
-    if (!itemToDelete) return;
+    if (order && order.items) {
+        const localItem = order.items.find((i: any) => i.id === itemId);
+        if (localItem) itemToDelete = localItem;
 
-    // Remove from local order items array
-    const updatedItems = order.items.filter(i => i.id !== itemId);
-    
-    // Recalculate total
-    const newTotal = updatedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        // Remove from local order items array
+        const updatedItems = order.items.filter((i: any) => i.id !== itemId);
+        
+        // Recalculate total
+        newTotal = updatedItems.reduce((acc: number, item: any) => acc + ((item.price || 0) * (item.quantity || 1)), 0);
 
-    // Update local DB
-    await db.orders.update(orderId, { items: updatedItems, total: newTotal });
+        // Update local DB
+        await db.orders.update(orderId, { items: updatedItems, total: newTotal });
+        await queueChange('orders', 'update', { id: orderId, total: newTotal });
+    } else if (navigator.onLine) {
+        // If order is not local, fetch from remote to calculate new total
+        const { data: remoteOrder } = await supabase.from('orders').select('total').eq('id', orderId).single();
+        if (remoteOrder && itemToDelete) {
+            newTotal = Math.max(0, (remoteOrder.total || 0) - ((itemToDelete.price || 0) * (itemToDelete.quantity || 1)));
+            await queueChange('orders', 'update', { id: orderId, total: newTotal });
+        }
+    }
 
-    // Queue changes
+    // Always queue the deletion of the item
     await queueChange('order_items', 'delete', { id: itemId });
-    await queueChange('orders', 'update', { id: orderId, total: newTotal });
 
     // Audit log
     await logAction(
@@ -338,9 +400,9 @@ export const deleteOrderItem = async (orderId: string, itemId: string, employeeI
         employeeId,
         {
             order_id: orderId,
-            product_name: itemToDelete.product_name,
-            quantity: itemToDelete.quantity,
-            price: itemToDelete.price
+            product_name: itemToDelete?.product_name || 'Unknown',
+            quantity: itemToDelete?.quantity || 1,
+            price: itemToDelete?.price || 0
         }
     );
 };
@@ -413,19 +475,22 @@ export const closeOrder = async (orderId: string, paymentMethod: 'cash' | 'card'
     }
 
     try {
-        await db.orders.update(orderId, updateData);
+        const updatedCount = await db.orders.update(orderId, updateData);
+        if (updatedCount === 0) {
+            await db.orders.put({
+                id: orderId,
+                status: 'paid',
+                created_at: closedAt,
+                table_id: 'unknown',
+                payment_method: paymentMethod,
+                invoice_number: invoiceNumber,
+                invoice_hash: invoiceHash,
+                previous_invoice_hash: previousHash,
+                ...(finalTotal !== undefined ? { total: finalTotal } : {})
+            });
+        }
     } catch (e) {
-        await db.orders.put({
-            id: orderId,
-            status: 'paid',
-            created_at: closedAt,
-            table_id: 'unknown',
-            payment_method: paymentMethod,
-            invoice_number: invoiceNumber,
-            invoice_hash: invoiceHash,
-            previous_invoice_hash: previousHash,
-            ...(finalTotal !== undefined ? { total: finalTotal } : {})
-        });
+        console.error("Error updating local order status", e);
     }
 
     // Queue order update
@@ -556,7 +621,7 @@ export const getKitchenOrders = async (): Promise<any[]> => {
                 }
 
                 if (local) {
-                    const finalItems = (local.items && local.items.length > 0) ? local.items : remote.items;
+                    const finalItems = local.items !== undefined ? local.items : remote.items;
                     const index = combinedOrders.findIndex(o => o.id === local.id);
                     if (index !== -1) {
                         combinedOrders[index] = { ...remote, items: finalItems };
