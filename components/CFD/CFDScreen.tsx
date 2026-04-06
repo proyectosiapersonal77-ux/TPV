@@ -38,7 +38,10 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
   useEffect(() => {
     if (!selectedTableId) return;
 
+    let isPosConnected = false;
+
     const fetchOrder = async () => {
+      if (isPosConnected) return; // Don't overwrite live POS data with DB data
       const order = await OrderService.getActiveOrderForTable(selectedTableId);
       setCurrentOrder(order);
     };
@@ -56,27 +59,49 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
       })
       .subscribe();
 
-    // Listen to local BroadcastChannel for live cart updates from POS
-    const channel = new BroadcastChannel(`cfd-sync-${selectedTableId}`);
-    channel.onmessage = (event) => {
-        if (event.data.type === 'SYNC_ORDER') {
-            setCurrentOrder(event.data.order);
-        } else if (event.data.type === 'PING') {
-            channel.postMessage({ type: 'PONG' });
-        }
-    };
+    // Supabase Broadcast for live cart updates
+    const syncChannel = supabase.channel(`cfd-sync-${selectedTableId}`);
+    
+    syncChannel.on('broadcast', { event: 'SYNC_ORDER' }, ({ payload }) => {
+        isPosConnected = true;
+        setCurrentOrder(payload.order);
+    });
 
-    channel.postMessage({ type: 'CFD_OPENED' });
+    syncChannel.on('broadcast', { event: 'PING' }, () => {
+        syncChannel.send({
+            type: 'broadcast',
+            event: 'CFD_STATUS',
+            payload: { status: 'PONG' }
+        });
+    });
+
+    syncChannel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+            syncChannel.send({
+                type: 'broadcast',
+                event: 'CFD_STATUS',
+                payload: { status: 'OPENED' }
+            });
+        }
+    });
 
     const handleUnload = () => {
-        channel.postMessage({ type: 'CFD_CLOSED' });
+        syncChannel.send({
+            type: 'broadcast',
+            event: 'CFD_STATUS',
+            payload: { status: 'CLOSED' }
+        });
     };
     window.addEventListener('beforeunload', handleUnload);
 
     return () => {
       supabase.removeChannel(orderSubscription);
-      channel.postMessage({ type: 'CFD_CLOSED' });
-      channel.close();
+      syncChannel.send({
+          type: 'broadcast',
+          event: 'CFD_STATUS',
+          payload: { status: 'CLOSED' }
+      });
+      supabase.removeChannel(syncChannel);
       window.removeEventListener('beforeunload', handleUnload);
     };
   }, [selectedTableId]);
