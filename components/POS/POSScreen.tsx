@@ -32,6 +32,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   const [processing, setProcessing] = useState(false); 
   const [error, setError] = useState<string | null>(null);
   const [manualDiscount, setManualDiscount] = useState<{type: 'percentage' | 'fixed_amount', value: number} | null>(null);
+  const [isCfdActive, setIsCfdActive] = useState(false);
   
   // Zustand Cart Store
   const { items: cart, addItem, removeItem, updateQuantity, clearCart, activeTableId, setActiveTable } = useCartStore();
@@ -43,6 +44,24 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
         setActiveTable(table.id);
         setManualDiscount(null);
     }
+  }, [table.id]);
+
+  // Track CFD Status
+  useEffect(() => {
+      const channel = new BroadcastChannel(`cfd-sync-${table.id}`);
+      
+      channel.onmessage = (event) => {
+          if (event.data.type === 'CFD_OPENED' || event.data.type === 'PONG') {
+              setIsCfdActive(true);
+          } else if (event.data.type === 'CFD_CLOSED') {
+              setIsCfdActive(false);
+          }
+      };
+
+      // Ping to check if already open
+      channel.postMessage({ type: 'PING' });
+
+      return () => channel.close();
   }, [table.id]);
 
   // React Query Fetching
@@ -307,6 +326,40 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   const calculateTotal = () => {
       return getTicketTotals().total;
   };
+
+  // Broadcast live state to CFD
+  useEffect(() => {
+      const channel = new BroadcastChannel(`cfd-sync-${table.id}`);
+      
+      // Combine current order and cart
+      const combinedItems = [...(currentOrder?.items || [])];
+      cart.forEach(cartItem => {
+          combinedItems.push({
+              id: cartItem.tempId,
+              order_id: currentOrder?.id || 'temp',
+              product_id: cartItem.product.id,
+              product_name: cartItem.product.name + (cartItem.variant ? ` (${cartItem.variant.name})` : ''),
+              quantity: cartItem.quantity,
+              price: cartItem.price,
+              status: 'pending',
+              notes: cartItem.notes,
+              course: cartItem.course,
+              created_at: new Date().toISOString()
+          } as any);
+      });
+
+      const liveOrder = {
+          ...currentOrder,
+          id: currentOrder?.id || 'temp',
+          table_id: table.id,
+          items: combinedItems,
+          total: calculateTotal()
+      };
+
+      channel.postMessage({ type: 'SYNC_ORDER', order: liveOrder });
+
+      return () => channel.close();
+  }, [currentOrder, cart, table.id, manualDiscount, promotions, products]);
 
   // --- API ACTIONS ---
 
@@ -1049,7 +1102,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                                 e.stopPropagation(); 
                                 window.open(`/?view=cfd&tableId=${table.id}`, '_blank', 'width=800,height=600');
                             }}
-                            className="p-2 text-gray-400 hover:text-brand-accent hover:bg-brand-800 rounded-full transition-colors"
+                            className={`p-2 rounded-full transition-colors ${isCfdActive ? 'text-brand-accent bg-brand-800' : 'text-gray-400 hover:text-brand-accent hover:bg-brand-800'}`}
                             title="Abrir Visor de Cliente (CFD)"
                         >
                             <Monitor size={20} />

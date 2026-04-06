@@ -61,12 +61,23 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
     channel.onmessage = (event) => {
         if (event.data.type === 'SYNC_ORDER') {
             setCurrentOrder(event.data.order);
+        } else if (event.data.type === 'PING') {
+            channel.postMessage({ type: 'PONG' });
         }
     };
 
+    channel.postMessage({ type: 'CFD_OPENED' });
+
+    const handleUnload = () => {
+        channel.postMessage({ type: 'CFD_CLOSED' });
+    };
+    window.addEventListener('beforeunload', handleUnload);
+
     return () => {
       supabase.removeChannel(orderSubscription);
+      channel.postMessage({ type: 'CFD_CLOSED' });
       channel.close();
+      window.removeEventListener('beforeunload', handleUnload);
     };
   }, [selectedTableId]);
 
