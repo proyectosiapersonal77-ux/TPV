@@ -822,6 +822,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
             supplier_id: (productForm.supplier_id === '' || productForm.supplier_id === 'null') ? null : productForm.supplier_id,
             stock_current: is_compound ? 0 : rest.stock_current,
             stock_min: is_compound ? 0 : rest.stock_min,
+            updated_at: new Date().toISOString(),
         };
 
         const allergenIdsArray = Array.from(selectedAllergens) as string[];

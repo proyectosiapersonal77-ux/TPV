@@ -240,6 +240,7 @@ export interface Product {
   barcode?: string; // New field for barcode/QR
   is_compound: boolean; // TRUE = Recipe (composed of others), FALSE = Raw Material/Simple
   created_at?: string;
+  updated_at?: string;
   
   // Joins (optional for UI)
   product_categories?: ProductCategory;
