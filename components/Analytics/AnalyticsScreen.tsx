@@ -346,7 +346,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div className="bg-brand-800 p-6 rounded-2xl border border-brand-700 shadow-lg">
                                         <p className="text-sm text-gray-400 font-bold uppercase mb-1">Ventas Totales</p>
-                                        <p className="text-3xl font-mono font-bold text-white">{reportData.totalSales.toFixed(2)}€</p>
+                                        <p className="text-3xl font-mono font-bold text-white">{reportData.totalSales.toFixed(2).replace('.', ',')}€</p>
                                     </div>
                                     <div className="bg-brand-800 p-6 rounded-2xl border border-brand-700 shadow-lg">
                                         <p className="text-sm text-gray-400 font-bold uppercase mb-1">Tickets</p>
@@ -355,14 +355,14 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                     <div className="bg-brand-800 p-6 rounded-2xl border border-brand-700 shadow-lg">
                                         <p className="text-sm text-gray-400 font-bold uppercase mb-1">Ticket Medio</p>
                                         <p className="text-3xl font-mono font-bold text-white">
-                                            {reportData.orderCount > 0 ? (reportData.totalSales / reportData.orderCount).toFixed(2) : '0.00'}€
+                                            {reportData.orderCount > 0 ? (reportData.totalSales / reportData.orderCount).toFixed(2).replace('.', ',') : '0,00'}€
                                         </p>
                                     </div>
                                     <div className="bg-brand-800 p-6 rounded-2xl border border-brand-700 shadow-lg">
                                         <p className="text-sm text-gray-400 font-bold uppercase mb-1">Efectivo / Tarjeta</p>
                                         <div className="flex gap-4">
-                                            <p className="text-xl font-mono font-bold text-green-400">{reportData.cashSales.toFixed(2)}€</p>
-                                            <p className="text-xl font-mono font-bold text-blue-400">{reportData.cardSales.toFixed(2)}€</p>
+                                            <p className="text-xl font-mono font-bold text-green-400">{reportData.cashSales.toFixed(2).replace('.', ',')}€</p>
+                                            <p className="text-xl font-mono font-bold text-blue-400">{reportData.cardSales.toFixed(2).replace('.', ',')}€</p>
                                         </div>
                                     </div>
                                 </div>
@@ -371,15 +371,15 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div className="bg-brand-800 p-6 rounded-2xl border border-brand-700 shadow-lg">
                                         <p className="text-sm text-gray-400 font-bold uppercase mb-1">Coste Total (Inventario)</p>
-                                        <p className="text-3xl font-mono font-bold text-red-400">{reportData.totalCost.toFixed(2)}€</p>
+                                        <p className="text-3xl font-mono font-bold text-red-400">{reportData.totalCost.toFixed(2).replace('.', ',')}€</p>
                                     </div>
                                     <div className="bg-brand-800 p-6 rounded-2xl border border-brand-700 shadow-lg">
                                         <p className="text-sm text-gray-400 font-bold uppercase mb-1">Beneficio Bruto</p>
-                                        <p className="text-3xl font-mono font-bold text-green-400">{reportData.grossProfit.toFixed(2)}€</p>
+                                        <p className="text-3xl font-mono font-bold text-green-400">{reportData.grossProfit.toFixed(2).replace('.', ',')}€</p>
                                     </div>
                                     <div className="bg-brand-800 p-6 rounded-2xl border border-brand-700 shadow-lg">
                                         <p className="text-sm text-gray-400 font-bold uppercase mb-1">Margen Bruto</p>
-                                        <p className="text-3xl font-mono font-bold text-brand-accent">{reportData.grossMargin.toFixed(2)}%</p>
+                                        <p className="text-3xl font-mono font-bold text-brand-accent">{reportData.grossMargin.toFixed(2).replace('.', ',')}%</p>
                                     </div>
                                 </div>
 
@@ -400,7 +400,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                         <Tooltip 
                                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
                                                             itemStyle={{ color: '#fff' }}
-                                                            formatter={(value: number) => [`${value.toFixed(2)}€`, 'Ventas']}
+                                                            formatter={(value: number) => [`${value.toFixed(2).replace('.', ',')}€`, 'Ventas']}
                                                         />
                                                         <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                                     </BarChart>
@@ -438,7 +438,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                                 </Pie>
                                                                 <Tooltip 
                                                                     contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
-                                                                    formatter={(value: number) => [`${value.toFixed(2)}€`, 'Ventas']}
+                                                                    formatter={(value: number) => [`${value.toFixed(2).replace('.', ',')}€`, 'Ventas']}
                                                                 />
                                                             </PieChart>
                                                         </ResponsiveContainer>
@@ -450,7 +450,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
                                                                     <span className="truncate max-w-[100px]" title={cat.name}>{cat.name}</span>
                                                                 </div>
-                                                                <span className="font-mono font-bold">{cat.sales.toFixed(2)}€</span>
+                                                                <span className="font-mono font-bold">{cat.sales.toFixed(2).replace('.', ',')}€</span>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -476,7 +476,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                         <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} width={80} />
                                                         <Tooltip 
                                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
-                                                            formatter={(value: number) => [`${value.toFixed(2)}€`, 'Ventas']}
+                                                            formatter={(value: number) => [`${value.toFixed(2).replace('.', ',')}€`, 'Ventas']}
                                                         />
                                                         <Bar dataKey="sales" fill="#10b981" radius={[0, 4, 4, 0]} />
                                                     </BarChart>
@@ -502,7 +502,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                         <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} width={80} />
                                                         <Tooltip 
                                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
-                                                            formatter={(value: number) => [`${value.toFixed(2)}€`, 'Ventas']}
+                                                            formatter={(value: number) => [`${value.toFixed(2).replace('.', ',')}€`, 'Ventas']}
                                                         />
                                                         <Bar dataKey="sales" fill="#f59e0b" radius={[0, 4, 4, 0]} />
                                                     </BarChart>
@@ -537,7 +537,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                     {reportData.bcgMatrix.filter(p => p.category === 'Estrella').map(p => (
                                                         <div key={p.id} className="bg-brand-800 p-2 rounded text-sm flex justify-between items-center">
                                                             <span className="truncate max-w-[120px]" title={p.name}>{p.name}</span>
-                                                            <span className="font-mono text-green-400">{p.margin.toFixed(2)}€</span>
+                                                            <span className="font-mono text-green-400">{p.margin.toFixed(2).replace('.', ',')}€</span>
                                                         </div>
                                                     ))}
                                                     {reportData.bcgMatrix.filter(p => p.category === 'Estrella').length === 0 && (
@@ -557,7 +557,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                     {reportData.bcgMatrix.filter(p => p.category === 'Vaca').map(p => (
                                                         <div key={p.id} className="bg-brand-800 p-2 rounded text-sm flex justify-between items-center">
                                                             <span className="truncate max-w-[120px]" title={p.name}>{p.name}</span>
-                                                            <span className="font-mono text-green-400">{p.margin.toFixed(2)}€</span>
+                                                            <span className="font-mono text-green-400">{p.margin.toFixed(2).replace('.', ',')}€</span>
                                                         </div>
                                                     ))}
                                                     {reportData.bcgMatrix.filter(p => p.category === 'Vaca').length === 0 && (
@@ -577,7 +577,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                     {reportData.bcgMatrix.filter(p => p.category === 'Interrogante').map(p => (
                                                         <div key={p.id} className="bg-brand-800 p-2 rounded text-sm flex justify-between items-center">
                                                             <span className="truncate max-w-[120px]" title={p.name}>{p.name}</span>
-                                                            <span className="font-mono text-green-400">{p.margin.toFixed(2)}€</span>
+                                                            <span className="font-mono text-green-400">{p.margin.toFixed(2).replace('.', ',')}€</span>
                                                         </div>
                                                     ))}
                                                     {reportData.bcgMatrix.filter(p => p.category === 'Interrogante').length === 0 && (
@@ -597,7 +597,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                     {reportData.bcgMatrix.filter(p => p.category === 'Perro').map(p => (
                                                         <div key={p.id} className="bg-brand-800 p-2 rounded text-sm flex justify-between items-center">
                                                             <span className="truncate max-w-[120px]" title={p.name}>{p.name}</span>
-                                                            <span className="font-mono text-green-400">{p.margin.toFixed(2)}€</span>
+                                                            <span className="font-mono text-green-400">{p.margin.toFixed(2).replace('.', ',')}€</span>
                                                         </div>
                                                     ))}
                                                     {reportData.bcgMatrix.filter(p => p.category === 'Perro').length === 0 && (
@@ -642,7 +642,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <div className={`text-xl font-mono font-bold ${order.status === 'voided' ? 'text-red-400 line-through' : 'text-white'}`}>
-                                                        {order.total.toFixed(2)}€
+                                                        {order.total.toFixed(2).replace('.', ',')}€
                                                     </div>
                                                     {order.status === 'paid' && (userRole?.permissions?.can_void_ticket || user?.role.toLowerCase() === 'admin') && (
                                                         <button 
@@ -682,15 +682,15 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                                 <div className="bg-brand-900 print:bg-gray-50 p-4 rounded-xl border border-brand-600 print:border-gray-200">
                                     <p className="text-xs text-gray-400 print:text-gray-600 uppercase font-bold mb-1">Total Ventas</p>
-                                    <p className="text-2xl font-mono font-bold text-white print:text-black">{reportData.totalSales.toFixed(2)}€</p>
+                                    <p className="text-2xl font-mono font-bold text-white print:text-black">{reportData.totalSales.toFixed(2).replace('.', ',')}€</p>
                                 </div>
                                 <div className="bg-brand-900 print:bg-gray-50 p-4 rounded-xl border border-brand-600 print:border-gray-200">
                                     <p className="text-xs text-gray-400 print:text-gray-600 uppercase font-bold mb-1">Efectivo</p>
-                                    <p className="text-xl font-mono font-bold text-green-400 print:text-black">{reportData.cashSales.toFixed(2)}€</p>
+                                    <p className="text-xl font-mono font-bold text-green-400 print:text-black">{reportData.cashSales.toFixed(2).replace('.', ',')}€</p>
                                 </div>
                                 <div className="bg-brand-900 print:bg-gray-50 p-4 rounded-xl border border-brand-600 print:border-gray-200">
                                     <p className="text-xs text-gray-400 print:text-gray-600 uppercase font-bold mb-1">Tarjeta</p>
-                                    <p className="text-xl font-mono font-bold text-blue-400 print:text-black">{reportData.cardSales.toFixed(2)}€</p>
+                                    <p className="text-xl font-mono font-bold text-blue-400 print:text-black">{reportData.cardSales.toFixed(2).replace('.', ',')}€</p>
                                 </div>
                                 <div className="bg-brand-900 print:bg-gray-50 p-4 rounded-xl border border-brand-600 print:border-gray-200">
                                     <p className="text-xs text-gray-400 print:text-gray-600 uppercase font-bold mb-1">Tickets</p>
@@ -715,9 +715,9 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                             {Object.entries(reportData.taxes).map(([rate, data]) => (
                                                 <tr key={rate} className="border-b border-brand-800/50 print:border-gray-100">
                                                     <td className="py-3 font-bold">{rate}%</td>
-                                                    <td className="py-3 text-right font-mono">{data.base.toFixed(2)}€</td>
-                                                    <td className="py-3 text-right font-mono">{data.tax.toFixed(2)}€</td>
-                                                    <td className="py-3 text-right font-mono font-bold">{data.total.toFixed(2)}€</td>
+                                                    <td className="py-3 text-right font-mono">{data.base.toFixed(2).replace('.', ',')}€</td>
+                                                    <td className="py-3 text-right font-mono">{data.tax.toFixed(2).replace('.', ',')}€</td>
+                                                    <td className="py-3 text-right font-mono font-bold">{data.total.toFixed(2).replace('.', ',')}€</td>
                                                 </tr>
                                             ))}
                                             {Object.keys(reportData.taxes).length === 0 && (
@@ -741,31 +741,31 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                             <div className="space-y-3 font-mono text-sm">
                                 <div className="flex justify-between py-2 border-b border-brand-700/50 print:border-gray-200">
                                     <span className="text-gray-300 print:text-gray-700">Fondo Inicial de Caja</span>
-                                    <span className="font-bold">{reportData.cashRegister.openingBalance.toFixed(2)}€</span>
+                                    <span className="font-bold">{reportData.cashRegister.openingBalance.toFixed(2).replace('.', ',')}€</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-brand-700/50 print:border-gray-200">
                                     <span className="text-gray-300 print:text-gray-700">Ventas en Efectivo</span>
-                                    <span className="font-bold text-green-400 print:text-black">+{reportData.cashSales.toFixed(2)}€</span>
+                                    <span className="font-bold text-green-400 print:text-black">+{reportData.cashSales.toFixed(2).replace('.', ',')}€</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-brand-700/50 print:border-gray-200">
                                     <span className="text-gray-300 print:text-gray-700">Entradas Manuales</span>
-                                    <span className="font-bold text-green-400 print:text-black">+{reportData.cashRegister.totalIn.toFixed(2)}€</span>
+                                    <span className="font-bold text-green-400 print:text-black">+{reportData.cashRegister.totalIn.toFixed(2).replace('.', ',')}€</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-brand-700/50 print:border-gray-200">
                                     <span className="text-gray-300 print:text-gray-700">Salidas Manuales</span>
-                                    <span className="font-bold text-red-400 print:text-black">-{reportData.cashRegister.totalOut.toFixed(2)}€</span>
+                                    <span className="font-bold text-red-400 print:text-black">-{reportData.cashRegister.totalOut.toFixed(2).replace('.', ',')}€</span>
                                 </div>
                                 
                                 <div className="flex justify-between py-4 mt-4 bg-brand-900/50 print:bg-gray-100 px-4 rounded-lg border border-brand-600 print:border-gray-300">
                                     <span className="font-bold uppercase text-brand-accent print:text-black">Total Efectivo Esperado</span>
-                                    <span className="font-bold text-lg text-brand-accent print:text-black">{reportData.cashRegister.expectedCash.toFixed(2)}€</span>
+                                    <span className="font-bold text-lg text-brand-accent print:text-black">{reportData.cashRegister.expectedCash.toFixed(2).replace('.', ',')}€</span>
                                 </div>
 
                                 {reportData.cashRegister.hasClosedRegister && (
                                     <>
                                         <div className="flex justify-between py-2 mt-4 border-b border-brand-700/50 print:border-gray-200">
                                             <span className="text-gray-300 print:text-gray-700">Efectivo Real (Arqueo)</span>
-                                            <span className="font-bold">{reportData.cashRegister.actualCash.toFixed(2)}€</span>
+                                            <span className="font-bold">{reportData.cashRegister.actualCash.toFixed(2).replace('.', ',')}€</span>
                                         </div>
                                         <div className={`flex justify-between py-3 px-4 mt-2 rounded-lg font-bold ${
                                             reportData.cashRegister.difference === 0 
@@ -775,7 +775,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
                                             <span className="uppercase">Descuadre</span>
                                             <span>
                                                 {reportData.cashRegister.difference > 0 ? '+' : ''}
-                                                {reportData.cashRegister.difference.toFixed(2)}€
+                                                {reportData.cashRegister.difference.toFixed(2).replace('.', ',')}€
                                             </span>
                                         </div>
                                     </>

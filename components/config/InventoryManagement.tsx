@@ -151,7 +151,7 @@ const ProductRow: React.FC<ListChildComponentProps<ProductRowData>> = ({ index, 
                     <input autoFocus type="number" step="0.01" className="w-full bg-brand-900 border border-brand-accent rounded px-1 py-0.5 text-right outline-none text-white font-mono" value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={handleSaveEdit} onKeyDown={handleEditKeyDown} onClick={e => e.stopPropagation()} />
                 ) : (
                     <span className={isEditable(product, 'cost_price') ? "cursor-pointer hover:text-white border-b border-dashed border-transparent hover:border-gray-500 transition-all" : ""}>
-                        {product.cost_price.toFixed(2)}€
+                        {product.cost_price.toFixed(2).replace('.', ',')}€
                     </span>
                 )}
             </div>
@@ -1155,12 +1155,12 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
 
   const handleAddIngredient = () => {
       if (!ingredientForm.productId || !ingredientForm.quantity) return;
-      const quantity = parseFloat(ingredientForm.quantity);
+      const quantity = parseFloat(ingredientForm.quantity.toString().replace(',', '.'));
       if (isNaN(quantity) || quantity <= 0) {
           alert("Por favor, introduce una cantidad válida.");
           return;
       }
-      const yieldPct = parseFloat(ingredientForm.yieldPercentage);
+      const yieldPct = parseFloat(ingredientForm.yieldPercentage.toString().replace(',', '.'));
       if (isNaN(yieldPct) || yieldPct <= 0 || yieldPct > 100) {
           alert("Por favor, introduce un rendimiento válido (1-100).");
           return;
@@ -1233,10 +1233,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
           if (prices.length === 0) return '0.00€';
           const min = Math.min(...prices);
           const max = Math.max(...prices);
-          if (min === max) return `${min.toFixed(2)}€`;
-          return `${min.toFixed(2)} - ${max.toFixed(2)}€`;
+          if (min === max) return `${min.toFixed(2).replace('.', ',')}€`;
+          return `${min.toFixed(2).replace('.', ',')} - ${max.toFixed(2).replace('.', ',')}€`;
       }
-      return `${Number(product.selling_price).toFixed(2)}€`;
+      return `${Number(product.selling_price).toFixed(2).replace('.', ',')}€`;
   };
 
   // Virtual List Context Data
@@ -1416,7 +1416,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                           </div>
                           <div className="text-right mt-6">
                               <span className="text-2xl font-black text-brand-accent">
-                                  {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : `${promo.discount_value.toFixed(2)}€`}
+                                  {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : `${promo.discount_value.toFixed(2).replace('.', ',')}€`}
                               </span>
                           </div>
                       </div>
@@ -1486,13 +1486,13 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                               {order.purchase_order_items?.map((item: any) => (
                                   <li key={item.id} className="flex justify-between">
                                       <span>{item.quantity}x {item.products?.name || 'Producto'}</span>
-                                      <span>{(item.quantity * item.cost_price).toFixed(2)}€</span>
+                                      <span>{(item.quantity * item.cost_price).toFixed(2).replace('.', ',')}€</span>
                                   </li>
                               ))}
                           </ul>
                       </div>
                       <div className="flex justify-between items-center mt-2 pt-2 border-t border-brand-700">
-                          <span className="font-bold text-brand-accent">Total: {order.purchase_order_items?.reduce((acc: number, item: any) => acc + (item.quantity * item.cost_price), 0).toFixed(2)}€</span>
+                          <span className="font-bold text-brand-accent">Total: {order.purchase_order_items?.reduce((acc: number, item: any) => acc + (item.quantity * item.cost_price), 0).toFixed(2).replace('.', ',')}€</span>
                           {order.status === 'pending' && (
                               <button 
                                   onClick={async () => {
@@ -1646,7 +1646,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                               <p className="text-sm">Edita el producto para generarle uno.</p>
                           </div>
                       )}
-                      <p className="mt-4 text-2xl font-bold text-black">{selectedProductForBarcode.selling_price.toFixed(2)}€</p>
+                      <p className="mt-4 text-2xl font-bold text-black">{selectedProductForBarcode.selling_price.toFixed(2).replace('.', ',')}€</p>
                   </div>
 
                   <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3">
@@ -1790,7 +1790,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                                 <div className="grid grid-cols-12 gap-2 items-end bg-brand-800 p-3 rounded-lg border border-brand-700">
                                     <div className="col-span-5">
                                         <label className="text-[10px] uppercase text-gray-500 font-bold mb-1">Materia Prima</label>
-                                        <select className="w-full bg-brand-900 border border-brand-600 rounded p-2 text-sm text-white outline-none" value={ingredientForm.productId} onChange={(e) => setIngredientForm({...ingredientForm, productId: e.target.value})}><option value="">Buscar ingrediente...</option>{products.filter(p => !p.is_compound).map(p => (<option key={p.id} value={p.id}>{p.name} ({p.cost_price.toFixed(2)}€ / {p.stock_unit})</option>))}</select>
+                                        <select className="w-full bg-brand-900 border border-brand-600 rounded p-2 text-sm text-white outline-none" value={ingredientForm.productId} onChange={(e) => setIngredientForm({...ingredientForm, productId: e.target.value})}><option value="">Buscar ingrediente...</option>{products.filter(p => !p.is_compound).map(p => (<option key={p.id} value={p.id}>{p.name} ({p.cost_price.toFixed(2).replace('.', ',')}€ / {p.stock_unit})</option>))}</select>
                                     </div>
                                     <div className="col-span-3">
                                         <label className="text-[10px] uppercase text-gray-500 font-bold mb-1">Cantidad</label>
@@ -1812,10 +1812,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                                                 const cost = getIngredientCost(ing.child_product_id);
                                                 const yieldPct = ing.yield_percentage || 100;
                                                 const total = (cost * ing.quantity) / (yieldPct / 100);
-                                                return (<tr key={ing.child_product_id + idx} className="bg-brand-900/50"><td className="p-3 font-medium">{getIngredientName(ing.child_product_id)}</td><td className="p-3 text-right text-gray-400">{cost.toFixed(3)}€</td><td className="p-3 text-center">{ing.quantity}</td><td className="p-3 text-center text-gray-400">{yieldPct}%</td><td className="p-3 text-right font-mono text-white">{total.toFixed(3)}€</td><td className="p-3 text-center"><button type="button" onClick={() => handleRemoveIngredient(ing.child_product_id)} className="text-red-400 hover:text-white"><X size={14} /></button></td></tr>);
+                                                return (<tr key={ing.child_product_id + idx} className="bg-brand-900/50"><td className="p-3 font-medium">{getIngredientName(ing.child_product_id)}</td><td className="p-3 text-right text-gray-400">{cost.toFixed(3).replace('.', ',')}€</td><td className="p-3 text-center"><input type="number" step="any" className="w-20 bg-brand-800 border border-brand-600 rounded p-1 text-center text-white outline-none focus:border-brand-accent" value={ing.quantity || ''} onChange={(e) => { const newQty = parseFloat(e.target.value); const newIngredients = [...(productForm.ingredients || [])]; newIngredients[idx].quantity = isNaN(newQty) ? 0 : newQty; setProductForm({ ...productForm, ingredients: newIngredients }); }} /></td><td className="p-3 text-center text-gray-400">{yieldPct}%</td><td className="p-3 text-right font-mono text-white">{total.toFixed(3).replace('.', ',')}€</td><td className="p-3 text-center"><button type="button" onClick={() => handleRemoveIngredient(ing.child_product_id)} className="text-red-400 hover:text-white"><X size={14} /></button></td></tr>);
                                             })}
                                         </tbody>
-                                        <tfoot className="bg-brand-800 border-t border-brand-700"><tr><td colSpan={4} className="p-3 text-right font-bold text-gray-300">Coste Total Receta:</td><td className="p-3 text-right font-bold text-brand-accent text-lg">{(productForm.ingredients?.reduce((acc, i) => acc + ((getIngredientCost(i.child_product_id) * i.quantity) / ((i.yield_percentage || 100) / 100)), 0) || 0).toFixed(3)}€</td><td></td></tr></tfoot>
+                                        <tfoot className="bg-brand-800 border-t border-brand-700"><tr><td colSpan={4} className="p-3 text-right font-bold text-gray-300">Coste Total Receta:</td><td className="p-3 text-right font-bold text-brand-accent text-lg">{(productForm.ingredients?.reduce((acc, i) => acc + ((getIngredientCost(i.child_product_id) * i.quantity) / ((i.yield_percentage || 100) / 100)), 0) || 0).toFixed(3).replace('.', ',')}€</td><td></td></tr></tfoot>
                                     </table>
                                 </div>
                             </div>
