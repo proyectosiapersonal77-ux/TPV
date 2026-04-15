@@ -17,6 +17,7 @@ const POSScreen = React.lazy(() => import('./components/POS/POSScreen'));
 const KitchenDisplay = React.lazy(() => import('./components/Kitchen/KitchenDisplay'));
 const CashRegisterScreen = React.lazy(() => import('./components/CashRegister/CashRegisterScreen'));
 const AnalyticsScreen = React.lazy(() => import('./components/Analytics/AnalyticsScreen'));
+const MenuEngineeringScreen = React.lazy(() => import('./components/MenuEngineering/MenuEngineeringScreen').then(module => ({ default: module.MenuEngineeringScreen })));
 const CFDScreen = React.lazy(() => import('./components/CFD/CFDScreen'));
 
 const LoadingFallback = () => (
@@ -196,6 +197,17 @@ const App: React.FC = () => {
       return (
         <Suspense fallback={<LoadingFallback />}>
           <AnalyticsScreen onNavigate={handleNavigate} />
+        </Suspense>
+      );
+  }
+
+  // Menu Engineering
+  if (currentView === 'menu_engineering' && isAuthenticated && user?.role === 'admin') {
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <Layout currentView={currentView} onNavigate={handleNavigate}>
+            <MenuEngineeringScreen onNavigate={handleNavigate} />
+          </Layout>
         </Suspense>
       );
   }

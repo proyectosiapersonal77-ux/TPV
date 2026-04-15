@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, LayoutGrid, ChefHat, Package, Settings, Home, Banknote, BarChart3 } from 'lucide-react';
+import { Menu, LayoutGrid, ChefHat, Package, Settings, Home, Banknote, BarChart3, Lightbulb } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
 import { UserRole, ViewState } from '../types';
 
@@ -87,6 +87,13 @@ const AdminNavigation: React.FC<AdminNavigationProps> = ({ onNavigate, currentVi
                         >
                             <BarChart3 size={18} className={currentView === 'analytics' ? 'text-brand-accent' : 'text-purple-400'} /> 
                             Finanzas y Analítica
+                        </button>
+                        <button 
+                            onClick={() => handleNav('menu_engineering')}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${currentView === 'menu_engineering' ? 'bg-brand-accent/20 text-brand-accent' : 'text-gray-300 hover:bg-brand-700 hover:text-white'}`}
+                        >
+                            <Lightbulb size={18} className={currentView === 'menu_engineering' ? 'text-brand-accent' : 'text-yellow-400'} /> 
+                            Ingeniería de Menú
                         </button>
                         <div className="h-px bg-brand-700 my-1 mx-2"></div>
                         <button 
