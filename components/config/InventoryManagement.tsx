@@ -1281,7 +1281,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
          </div>
          
          <div className="flex items-center gap-3">
-             <AdminNavigation onNavigate={onNavigate} currentView="inventory" />
+             <AdminNavigation onNavigate={onNavigate} currentView="inventory" align="responsive-inventory" />
              {activeTab === 'products' && (
                  <div className="flex gap-2">
                      <input type="file" accept=".csv" className="hidden" ref={importFileInputRef} onChange={handleFileChange} />

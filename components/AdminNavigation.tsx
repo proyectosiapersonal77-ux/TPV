@@ -6,9 +6,10 @@ import { UserRole, ViewState } from '../types';
 interface AdminNavigationProps {
     onNavigate: (view: ViewState) => void;
     currentView?: ViewState;
+    align?: 'left' | 'right' | 'responsive-inventory';
 }
 
-const AdminNavigation: React.FC<AdminNavigationProps> = ({ onNavigate, currentView }) => {
+const AdminNavigation: React.FC<AdminNavigationProps> = ({ onNavigate, currentView, align = 'right' }) => {
     const { user, userRole } = useAuthStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -41,7 +42,7 @@ const AdminNavigation: React.FC<AdminNavigationProps> = ({ onNavigate, currentVi
             </button>
 
             {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-brand-800 border border-brand-600 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right ring-1 ring-black/20">
+                <div className={`absolute ${align === 'right' ? 'right-0 origin-top-right' : align === 'left' ? 'left-0 origin-top-left' : 'left-0 origin-top-left xl:left-auto xl:right-0 xl:origin-top-right'} mt-2 w-64 bg-brand-800 border border-brand-600 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-1 ring-black/20`}>
                     <div className="p-3 border-b border-brand-700 bg-brand-900/50">
                         <p className="text-xs text-brand-accent font-bold uppercase tracking-wider">Navegación Rápida</p>
                     </div>
