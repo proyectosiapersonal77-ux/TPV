@@ -54,11 +54,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
   const getRoleIcon = (role: string) => {
     const r = role.toLowerCase();
     
-    if (r === UserRole.KITCHEN || r.includes('cocina')) return <ChefHat className="w-12 h-12 mb-2 text-brand-accent" />;
-    if (r === UserRole.WAITER || r.includes('sala') || r.includes('camarer')) return <Utensils className="w-12 h-12 mb-2 text-green-400" />;
-    if (r === UserRole.ADMIN || r.includes('admin') || r.includes('encargad') || userRole?.permissions?.can_manage_settings) return <ShieldAlert className="w-12 h-12 mb-2 text-red-400" />;
+    if (r === UserRole.KITCHEN || r.includes('cocina')) return <ChefHat className="w-10 h-10 sm:w-12 sm:h-12 text-brand-accent shrink-0" />;
+    if (r === UserRole.WAITER || r.includes('sala') || r.includes('camarer')) return <Utensils className="w-10 h-10 sm:w-12 sm:h-12 text-green-400 shrink-0" />;
+    if (r === UserRole.ADMIN || r.includes('admin') || r.includes('encargad') || userRole?.permissions?.can_manage_settings) return <ShieldAlert className="w-10 h-10 sm:w-12 sm:h-12 text-red-400 shrink-0" />;
     
-    return <User className="w-12 h-12 mb-2 text-blue-400" />;
+    return <User className="w-10 h-10 sm:w-12 sm:h-12 text-blue-400 shrink-0" />;
   };
 
   const handleSavePreferences = async () => {
@@ -164,20 +164,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto pb-6">
+      <div className="flex-1 overflow-y-auto pb-4">
         <div className="flex flex-col items-center justify-center min-h-full">
-          <div className="bg-brand-800 border border-brand-700 p-6 sm:p-12 rounded-3xl text-center max-w-4xl shadow-2xl w-full">
-            <div className="flex justify-center">
-               {getRoleIcon(user.role)}
+          <div className="bg-brand-800 border border-brand-700 p-6 sm:p-8 rounded-3xl text-center max-w-5xl shadow-2xl w-full">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                <div>
+                  {getRoleIcon(user.role)}
+                </div>
+                <div className="text-center sm:text-left">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">Hola, {user.name.split(' ')[0]}</h2>
+                  <p className="text-gray-400 text-sm">Has iniciado sesión correctamente.</p>
+                </div>
             </div>
-            <h2 className="text-3xl font-bold text-white mb-2">Hola, {user.name.split(' ')[0]}</h2>
-            <p className="text-gray-400 mb-8">Has iniciado sesión correctamente.</p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                {hasModuleAccess('module_tables', user.role, user.preferences?.module_permissions) && (
                    <button 
                       onClick={() => onNavigate('tables')}
-                      className="w-full bg-brand-accent hover:bg-brand-accentHover text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-brand-accent/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                      className="w-full bg-brand-accent hover:bg-brand-accentHover text-white p-4 sm:p-5 rounded-2xl font-bold text-base sm:text-lg shadow-lg shadow-brand-accent/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
                    >
                       <LayoutGrid size={32} />
                       Plano de Mesas
@@ -188,7 +192,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                {hasModuleAccess('module_kitchen', user.role, user.preferences?.module_permissions) && (
                    <button 
                       onClick={() => onNavigate('kitchen')}
-                      className="w-full bg-orange-700 hover:bg-orange-600 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-orange-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                      className="w-full bg-orange-700 hover:bg-orange-600 text-white p-4 sm:p-5 rounded-2xl font-bold text-base sm:text-lg shadow-lg shadow-orange-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
                    >
                       <ChefHat size={32} />
                       Cocina
@@ -199,7 +203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                {hasModuleAccess('module_cfd', user.role, user.preferences?.module_permissions) && (
                    <button 
                       onClick={() => onNavigate('cfd')}
-                      className="w-full bg-teal-700 hover:bg-teal-600 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-teal-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                      className="w-full bg-teal-700 hover:bg-teal-600 text-white p-4 sm:p-5 rounded-2xl font-bold text-base sm:text-lg shadow-lg shadow-teal-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
                    >
                       <Monitor size={32} />
                       Visor de Cliente
@@ -210,7 +214,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                {hasModuleAccess('module_inventory', user.role, user.preferences?.module_permissions) && (
                    <button 
                        onClick={() => onNavigate('inventory')}
-                       className="w-full bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                       className="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 sm:p-5 rounded-2xl font-bold text-base sm:text-lg shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
                    >
                        <Package size={32} />
                        Inventario y Carta
@@ -221,7 +225,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                {hasModuleAccess('module_menu_engineering', user.role, user.preferences?.module_permissions) && (
                    <button 
                        onClick={() => onNavigate('menu_engineering')}
-                       className="w-full bg-yellow-600 hover:bg-yellow-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-yellow-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                       className="w-full bg-yellow-600 hover:bg-yellow-700 text-white p-4 sm:p-5 rounded-2xl font-bold text-base sm:text-lg shadow-lg shadow-yellow-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
                    >
                        <Lightbulb size={32} />
                        Ingeniería de Menú
@@ -232,7 +236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                {hasModuleAccess('module_cash_register', user.role, user.preferences?.module_permissions) && (
                    <button 
                        onClick={() => onNavigate('cash_register')}
-                       className="w-full bg-green-600 hover:bg-green-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-green-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                       className="w-full bg-green-600 hover:bg-green-700 text-white p-4 sm:p-5 rounded-2xl font-bold text-base sm:text-lg shadow-lg shadow-green-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
                    >
                        <Banknote size={32} />
                        Gestión de Caja
@@ -243,7 +247,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                {hasModuleAccess('module_analytics', user.role, user.preferences?.module_permissions) && (
                    <button 
                        onClick={() => onNavigate('analytics')}
-                       className="w-full bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-purple-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                       className="w-full bg-purple-600 hover:bg-purple-700 text-white p-4 sm:p-5 rounded-2xl font-bold text-base sm:text-lg shadow-lg shadow-purple-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
                    >
                        <BarChart3 size={32} />
                        Finanzas y Analítica
