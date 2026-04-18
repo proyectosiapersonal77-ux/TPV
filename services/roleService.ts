@@ -1,5 +1,6 @@
 import { supabase } from '../Supabase';
 import { Role, RolePermissions } from '../types';
+import { applyTourRestriction } from '../utils/tourMode';
 
 // Fallback roles in case DB table doesn't exist yet or connection fails
 const DEFAULT_ROLES: Role[] = [
@@ -48,6 +49,21 @@ const DEFAULT_ROLES: Role[] = [
       can_manage_settings: false
     }
   },
+  { 
+    id: '4', 
+    name: 'tour', 
+    color: '#3b82f6', 
+    is_system: true,
+    permissions: {
+      can_discount: false,
+      can_open_drawer: false,
+      can_void_ticket: false,
+      can_manage_inventory: false,
+      can_manage_employees: false,
+      can_view_reports: true,
+      can_manage_settings: false
+    }
+  },
 ];
 
 export const getAllRoles = async (): Promise<Role[]> => {
@@ -61,13 +77,21 @@ export const getAllRoles = async (): Promise<Role[]> => {
       console.warn("Could not fetch roles table, using defaults. Ensure 'roles' table exists.", error);
       return DEFAULT_ROLES;
     }
-    return data as Role[];
+    
+    // Inject Tour role if it doesn't exist in the database payload
+    let roles = data as Role[];
+    if (!roles.some(r => r.name.toLowerCase() === 'tour')) {
+        const tourRole = DEFAULT_ROLES.find(r => r.name === 'tour');
+        if (tourRole) roles.push(tourRole);
+    }
+    return roles;
   } catch (e) {
     return DEFAULT_ROLES;
   }
 };
 
 export const createRole = async (name: string, permissions: RolePermissions = {}): Promise<Role> => {
+  applyTourRestriction();
   // Simple color generator based on name length
   const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b'];
   const color = colors[name.length % colors.length];
@@ -84,6 +108,7 @@ export const createRole = async (name: string, permissions: RolePermissions = {}
 };
 
 export const updateRole = async (id: string, updates: Partial<Role>): Promise<Role> => {
+  applyTourRestriction();
   const { data, error } = await supabase
     .from('roles')
     .update(updates)
@@ -96,6 +121,7 @@ export const updateRole = async (id: string, updates: Partial<Role>): Promise<Ro
 };
 
 export const deleteRole = async (id: string): Promise<void> => {
+  applyTourRestriction();
   const { error } = await supabase
     .from('roles')
     .delete()

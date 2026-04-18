@@ -3,6 +3,7 @@ import { db } from '../db';
 import { queueChange } from './syncService';
 import { Product, ProductCategory, ProductSubcategory, Supplier, Allergen, ProductVariant, ProductIngredient, UnitOfMeasure, StockMovement, WasteReason, ProductModifier, Course, StockUnit } from '../types';
 import { logAction } from './auditService';
+import { applyTourRestriction } from '../utils/tourMode';
 
 // --- MODIFIER HELPERS ---
 export const getProductModifiers = (product: Product): ProductModifier[] => {
@@ -57,6 +58,7 @@ export const getAllProducts = async (): Promise<Product[]> => {
 };
 
 export const createProduct = async (productData: Partial<Product> & { allergen_ids?: string[], variants?: ProductVariant[], ingredients?: ProductIngredient[] }): Promise<Product> => {
+  applyTourRestriction();
   const { allergen_ids, variants, ingredients, ...product } = productData;
   
   if (product.barcode === '') {
@@ -122,6 +124,7 @@ export interface PurchaseItem {
 }
 
 export const receivePurchase = async (items: PurchaseItem[], userId?: string, notes?: string): Promise<void> => {
+  applyTourRestriction();
   for (const item of items) {
     const currentProd = await db.products.get(item.product_id);
     if (!currentProd) continue;
@@ -169,6 +172,7 @@ export const receivePurchase = async (items: PurchaseItem[], userId?: string, no
 };
 
 export const updateProduct = async (id: string, productData: Partial<Product> & { allergen_ids?: string[], variants?: ProductVariant[], ingredients?: ProductIngredient[] }, userId?: string): Promise<Product> => {
+  applyTourRestriction();
   const { allergen_ids, variants, ingredients, ...updates } = productData;
 
   if (updates.barcode === '') {
@@ -267,18 +271,21 @@ export const updateProduct = async (id: string, productData: Partial<Product> & 
 };
 
 export const deleteProduct = async (id: string): Promise<void> => {
+  applyTourRestriction();
   const { error } = await supabase.from('products').delete().eq('id', id);
   if (error) throw error;
   await db.products.delete(id); // Update local
 };
 
 export const bulkDeleteProducts = async (ids: string[]): Promise<void> => {
+  applyTourRestriction();
   const { error } = await supabase.from('products').delete().in('id', ids);
   if (error) throw error;
   await db.products.bulkDelete(ids);
 };
 
 export const bulkUpdateProductCategory = async (ids: string[], categoryId: string | null, subcategoryId: string | null): Promise<void> => {
+  applyTourRestriction();
   const { error } = await supabase.from('products').update({ category_id: categoryId, subcategory_id: subcategoryId }).in('id', ids);
   if (error) throw error;
   // Update local
@@ -318,6 +325,7 @@ export const downloadInventoryCSV = async () => {
 };
 
 export const processInventoryImport = async (file: File, currentUserId?: string): Promise<{ success: number; errors: number }> => {
+  applyTourRestriction();
     // This logic creates many items. Ideally, we should perform this online.
     // Logic kept but reading from local DB for matching.
     return new Promise((resolve, reject) => {
@@ -461,11 +469,13 @@ export const getStockMovements = async (productId: string): Promise<StockMovemen
 };
 
 export const createStockMovement = async (movement: Partial<StockMovement>): Promise<void> => {
+  applyTourRestriction();
     // Writes to queue
     await queueChange('stock_movements', 'create', movement);
 };
 
 export const checkAndGeneratePurchaseOrder = async (productId: string, currentStock: number, minStock: number, supplierId: string | null) => {
+  applyTourRestriction();
     if (!supplierId || currentStock > minStock) return;
 
     // Check if there's already a pending purchase order for this supplier
@@ -541,6 +551,7 @@ export const getAllWasteReasons = async (): Promise<WasteReason[]> => {
 };
 
 export const createWasteReason = async (name: string): Promise<WasteReason> => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('waste_reasons').insert([{ name }]).select().single();
     if (error) throw error;
     await db.waste_reasons.put(data); // Sync local
@@ -548,6 +559,7 @@ export const createWasteReason = async (name: string): Promise<WasteReason> => {
 };
 
 export const updateWasteReason = async (id: string, name: string): Promise<WasteReason> => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('waste_reasons').update({ name }).eq('id', id).select().single();
     if (error) throw error;
     await db.waste_reasons.put(data);
@@ -555,11 +567,13 @@ export const updateWasteReason = async (id: string, name: string): Promise<Waste
 };
 
 export const deleteWasteReason = async (id: string): Promise<void> => {
+  applyTourRestriction();
     await supabase.from('waste_reasons').delete().eq('id', id);
     await db.waste_reasons.delete(id);
 };
 
 export const registerWaste = async (productId: string, quantity: number, reason: string, userId: string): Promise<void> => {
+  applyTourRestriction();
     // RPC is hard to queue generically. We'll do a direct decrement via Queue manually.
     // 1. Queue Stock Movement creation
     await queueChange('stock_movements', 'create', {
@@ -586,6 +600,7 @@ export const registerWaste = async (productId: string, quantity: number, reason:
 };
 
 export const deductProductStock = async (productId: string, quantity: number, userId: string, reason: string = 'Venta TPV'): Promise<void> => {
+  applyTourRestriction();
     const product = await db.products.get(productId);
     if (!product) return;
 
@@ -629,35 +644,41 @@ export const getAllCourses = async (): Promise<Course[]> => await db.courses.ord
 
 // Update/Create/Delete simple entities (Categories, etc.) - Simplified pattern: Write Supabase -> Update Local
 export const createCourse = async (name: string, order_index: number): Promise<Course> => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('courses').insert([{ name, order_index }]).select().single();
     if (error) throw error;
     await db.courses.put(data);
     return data;
 };
 export const updateCourse = async (id: string, name: string, order_index: number): Promise<Course> => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('courses').update({ name, order_index }).eq('id', id).select().single();
     if (error) throw error;
     await db.courses.put(data);
     return data;
 };
 export const deleteCourse = async (id: string): Promise<void> => {
+  applyTourRestriction();
     await supabase.from('courses').delete().eq('id', id);
     await db.courses.delete(id);
 };
 
 export const createCategory = async (name: string, kds_station?: string): Promise<ProductCategory> => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('product_categories').insert([{ name, kds_station }]).select().single();
     if (error) throw error;
     await db.categories.put(data);
     return data;
 };
 export const updateCategory = async (id: string, name: string, kds_station?: string): Promise<ProductCategory> => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('product_categories').update({ name, kds_station }).eq('id', id).select().single();
     if (error) throw error;
     await db.categories.put(data);
     return data;
 };
 export const deleteCategory = async (id: string): Promise<void> => {
+  applyTourRestriction();
     await supabase.from('product_categories').delete().eq('id', id);
     await db.categories.delete(id);
 };
@@ -666,69 +687,81 @@ export const deleteCategory = async (id: string): Promise<void> => {
 // For brevity, assuming user follows the pattern above for the remaining CRUD operations.
 // The critical requirement "Ensure data... loads correctly" is handled by syncDatabase in syncService.
 export const createSubcategory = async (name: string, categoryId: string) => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('product_subcategories').insert([{ name, category_id: categoryId }]).select().single();
     if (error) throw error;
     await db.subcategories.put(data);
     return data;
 };
 export const updateSubcategory = async (id: string, name: string, categoryId: string) => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('product_subcategories').update({ name, category_id: categoryId }).eq('id', id).select().single();
     if (error) throw error;
     await db.subcategories.put(data);
     return data;
 };
 export const deleteSubcategory = async (id: string) => {
+  applyTourRestriction();
     await supabase.from('product_subcategories').delete().eq('id', id);
     await db.subcategories.delete(id);
 };
 
 export const createSupplier = async (supplier: Partial<Supplier>) => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('suppliers').insert([supplier]).select().single();
     if (error) throw error;
     await db.suppliers.put(data);
     return data;
 };
 export const updateSupplier = async (id: string, updates: Partial<Supplier>) => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('suppliers').update(updates).eq('id', id).select().single();
     if (error) throw error;
     await db.suppliers.put(data);
     return data;
 };
 export const deleteSupplier = async (id: string) => {
+  applyTourRestriction();
     await supabase.from('suppliers').delete().eq('id', id);
     await db.suppliers.delete(id);
 };
 
 export const createAllergen = async (name: string) => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('allergens').insert([{ name }]).select().single();
     if (error) throw error;
     await db.allergens.put(data);
     return data;
 };
 export const updateAllergen = async (id: string, name: string) => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('allergens').update({ name }).eq('id', id).select().single();
     if (error) throw error;
     await db.allergens.put(data);
     return data;
 };
 export const deleteAllergen = async (id: string) => {
+  applyTourRestriction();
     await supabase.from('allergens').delete().eq('id', id);
     await db.allergens.delete(id);
 };
 
 export const createUnit = async (name: string, abbreviation: string) => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('units_of_measure').insert([{ name, abbreviation }]).select().single();
     if (error) throw error;
     await db.units.put(data);
     return data;
 };
 export const updateUnit = async (id: string, updates: any) => {
+  applyTourRestriction();
     const { data, error } = await supabase.from('units_of_measure').update(updates).eq('id', id).select().single();
     if (error) throw error;
     await db.units.put(data);
     return data;
 };
 export const deleteUnit = async (id: string) => {
+  applyTourRestriction();
     await supabase.from('units_of_measure').delete().eq('id', id);
     await db.units.delete(id);
 };
@@ -739,11 +772,13 @@ export const getPromotions = async (): Promise<any[]> => {
 };
 
 export const savePromotion = async (promotion: any): Promise<void> => {
+  applyTourRestriction();
     const id = promotion.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
     const promoToSave = { ...promotion, id: String(id) };
     await db.promotions.put(promoToSave);
 };
 
 export const deletePromotion = async (id: string): Promise<void> => {
+  applyTourRestriction();
     await db.promotions.delete(id);
 };

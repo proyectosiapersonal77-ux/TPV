@@ -5,6 +5,7 @@ import { getAllEmployees, createEmployee, updateEmployee, deleteEmployee } from 
 import { getAllRoles, createRole, deleteRole, updateRole } from '../../services/roleService';
 import { supabase } from '../../Supabase';
 import { MODULES, hasModuleAccess } from '../../utils/permissions';
+import { applyTourRestrictionNoThrow } from '../../utils/tourMode';
 
 const UserManagement: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -103,6 +104,7 @@ const UserManagement: React.FC = () => {
 
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (applyTourRestrictionNoThrow()) return;
     
     // 1. Validation
     if (!formData.name.trim()) {
@@ -172,6 +174,7 @@ const UserManagement: React.FC = () => {
   
   const handleAddRole = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (applyTourRestrictionNoThrow()) return;
     if (!newRoleName.trim()) return;
     setRoleLoading(true);
     try {
@@ -199,6 +202,7 @@ const UserManagement: React.FC = () => {
 
   const handleUpdateRole = async (originalRoleName: string) => {
     if (!editingRoleId || !editingRoleName.trim()) return;
+    if (applyTourRestrictionNoThrow()) return;
     setRoleLoading(true);
     try {
         const newNameNormalized = editingRoleName.toLowerCase();
@@ -236,6 +240,7 @@ const UserManagement: React.FC = () => {
 
   const confirmDeleteRole = async () => {
     if (!roleToDelete) return;
+    if (applyTourRestrictionNoThrow()) return;
     setRoleLoading(true);
     try {
       await deleteRole(roleToDelete.id);
@@ -261,6 +266,7 @@ const UserManagement: React.FC = () => {
 
   const confirmDeleteUser = async () => {
     if (!employeeToDelete) return;
+    if (applyTourRestrictionNoThrow()) return;
     setIsDeleting(true);
     try {
       await deleteEmployee(employeeToDelete.id);

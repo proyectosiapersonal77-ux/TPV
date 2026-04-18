@@ -3,7 +3,8 @@
 export enum UserRole {
   ADMIN = 'admin',
   WAITER = 'waiter',
-  KITCHEN = 'kitchen'
+  KITCHEN = 'kitchen',
+  TOUR = 'tour'
 }
 
 export interface RolePermissions {

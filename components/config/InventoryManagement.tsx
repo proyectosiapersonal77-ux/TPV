@@ -17,6 +17,7 @@ import { db } from '../../db';
 import { supabase } from '../../Supabase';
 import AdminNavigation from '../AdminNavigation';
 import BarcodeLib from 'react-barcode';
+import { applyTourRestrictionNoThrow } from '../../utils/tourMode';
 
 type InventoryTab = 'products' | 'categories' | 'subcategories' | 'suppliers' | 'allergens' | 'units' | 'waste_reasons' | 'courses' | 'purchase_orders' | 'promotions';
 type EditableField = 'cost_price' | 'selling_price' | 'stock_current';
@@ -513,6 +514,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
 
   const handleSaveEdit = async () => {
       if (!editingCell) return;
+      if (applyTourRestrictionNoThrow()) return;
       const newValue = parseFloat(editValue);
       if (isNaN(newValue)) {
           setEditingCell(null);
@@ -559,6 +561,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
 
   const handleRegisterWaste = async (e: React.FormEvent) => {
       e.preventDefault();
+      if (applyTourRestrictionNoThrow()) return;
       if (!selectedProductForWaste || !wasteForm.quantity || !wasteForm.reasonId) return;
       const qty = parseFloat(wasteForm.quantity);
       if (isNaN(qty) || qty <= 0) {
@@ -618,6 +621,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
   };
 
   const handleBulkDelete = async () => {
+      if (applyTourRestrictionNoThrow()) return;
       if (selectedProductIds.size === 0) return;
       setIsDeleting(true);
       try {
@@ -791,6 +795,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+      if (applyTourRestrictionNoThrow()) return;
     setSaving(true);
     try {
       if (activeTab === 'products') {
@@ -1064,6 +1069,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
   };
 
   const confirmDelete = async () => {
+      if (applyTourRestrictionNoThrow()) return;
     if (!itemToDelete) return;
     const { id, type, name } = itemToDelete;
     

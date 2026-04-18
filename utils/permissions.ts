@@ -24,6 +24,10 @@ export const hasModuleAccess = (
 
     // 2. Fallback to Role defaults.
     const roleStr = (userRoleString || '').toLowerCase();
+    
+    // Tour role can view everything
+    if (roleStr === UserRole.TOUR || roleStr === 'tour') return true;
+
     const isAdmin = roleStr === UserRole.ADMIN || roleStr.includes('admin');
 
     // Admins have access to everything by default.

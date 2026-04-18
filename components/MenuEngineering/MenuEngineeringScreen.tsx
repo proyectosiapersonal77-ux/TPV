@@ -41,8 +41,8 @@ export const MenuEngineeringScreen: React.FC<Props> = ({ onNavigate }) => {
     // Calculate actual costs for compound products
     const productsWithCalculatedCosts = useMemo(() => {
         return products.map(product => {
-            if (product.is_compound && product.product_ingredients) {
-                const calculatedCost = product.product_ingredients.reduce((acc, ing) => {
+            if (product.is_compound && product.ingredients) {
+                const calculatedCost = product.ingredients.reduce((acc, ing) => {
                     const child = products.find(p => p.id === ing.child_product_id);
                     const cost = child ? child.cost_price : 0;
                     const yieldPct = ing.yield_percentage || 100;

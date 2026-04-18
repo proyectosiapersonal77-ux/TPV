@@ -216,7 +216,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
 
           activePromos.forEach(promo => {
               const appliesToCategory = promo.applicable_categories?.includes(item.product.category_id);
-              const appliesToProduct = promo.applicable_products?.includes(item.product.id);
+              const appliesToProduct = promo.applicable_products?.includes((item.product as any).id);
               
               if (appliesToCategory || appliesToProduct) {
                   let discount = 0;
@@ -379,6 +379,10 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
           setShowMobileCart(false);
 
       } catch (err: any) {
+          if (err.message === 'TOUR_MODE_RESTRICTION') {
+              setProcessing(false);
+              return;
+          }
           soundService.playError();
           console.error("Error sending order", err);
           setError("Error al enviar a cocina: " + err.message);
@@ -427,6 +431,10 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
           setPaymentModalOpen(false);
           onBack(); 
       } catch (err: any) {
+          if (err.message === 'TOUR_MODE_RESTRICTION') {
+              setProcessing(false);
+              return;
+          }
           setError("Error: " + err.message);
       } finally {
           setProcessing(false);
@@ -493,6 +501,10 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
           setMoveOrderModalOpen(false);
           onBack(); // Go back to table plan
       } catch (e: any) {
+          if (e.message === 'TOUR_MODE_RESTRICTION') {
+              setProcessing(false);
+              return;
+          }
           setError("Error al mover mesa: " + e.message);
       } finally {
           setProcessing(false);
@@ -698,6 +710,10 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                  refetchOrder();
               }
           } catch (e: any) {
+              if (e.message === 'TOUR_MODE_RESTRICTION') {
+                  setSubmitting(false);
+                  return;
+              }
               alert("Error: " + e.message);
           } finally {
               setSubmitting(false);
@@ -825,6 +841,10 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                   if (mode === 'manual') setAmountToPay('');
               }
           } catch (err: any) {
+              if (err.message === 'TOUR_MODE_RESTRICTION') {
+                  setProcessing(false);
+                  return;
+              }
               alert("Error: " + err.message);
           } finally {
               setProcessing(false);

@@ -4,6 +4,7 @@ import { queueChange } from './syncService';
 import { Order, OrderItem, OrderStatus, OrderItemStatus } from '../types';
 import { generateSHA256Hash } from './cryptoService';
 import { logAction } from './auditService';
+import { applyTourRestriction } from '../utils/tourMode';
 
 // Helper to generate UUID v4 (required for offline ID generation)
 function uuidv4() {
@@ -72,6 +73,7 @@ export const getActiveOrderForTable = async (tableId: string): Promise<Order | n
 // Merge Orders (When joining tables)
 // Moves items from sourceOrderId to targetOrderId
 export const mergeOrders = async (targetOrderId: string, sourceOrderId: string, sourceTableName: string): Promise<void> => {
+    applyTourRestriction();
     // 1. Get Source Order Items
     let sourceItems: OrderItem[] = [];
     const sourceOrderLocal = await db.orders.get(sourceOrderId);
@@ -226,6 +228,7 @@ export const getOpenOrders = async (): Promise<{id: string, table_id: string, to
 
 // Create a new Order (Offline First)
 export const createOrder = async (tableId: string, employeeId: string): Promise<Order> => {
+    applyTourRestriction();
     // Check if table is child, if so, redirect to parent
     const table = await db.restaurantTables.get(tableId);
     const finalTableId = (table && table.parent_id) ? table.parent_id : tableId;
@@ -261,6 +264,7 @@ import * as InventoryService from './inventoryService';
 
 // Add Items to Order (Offline First)
 export const addItemsToOrder = async (orderId: string, items: Partial<OrderItem>[], employeeId: string): Promise<void> => {
+    applyTourRestriction();
     if (items.length === 0) return;
 
     // We can try to fetch original table name for traceability if not provided

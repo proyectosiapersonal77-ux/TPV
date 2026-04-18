@@ -96,9 +96,9 @@ const App: React.FC = () => {
       const roleName = verifiedUser.role.toLowerCase();
       
       // Use permissions if available, otherwise fallback to role name
-      if (verifiedRole?.permissions?.can_manage_settings || roleName === UserRole.ADMIN) {
+      if (verifiedRole?.permissions?.can_manage_settings || roleName === 'admin' || roleName === 'tour') {
         setCurrentView('dashboard');
-      } else if (roleName === UserRole.KITCHEN) {
+      } else if (roleName === 'kitchen') {
         setCurrentView('kitchen');
       } else {
         setCurrentView('tables'); // Waiters go to tables
@@ -139,7 +139,7 @@ const App: React.FC = () => {
   // --- FULL SCREEN VIEWS ---
 
   // Configuration
-  if (currentView === 'config' && isAuthenticated && user?.role === 'admin') {
+  if (currentView === 'config' && isAuthenticated && (user?.role === 'admin' || user?.role === 'tour')) {
     return (
       <Suspense fallback={<LoadingFallback />}>
         <ConfigScreen onBack={() => setCurrentView('dashboard')} onNavigate={handleNavigate} />
@@ -151,13 +151,13 @@ const App: React.FC = () => {
   if (currentView === 'kitchen' && isAuthenticated) {
       return (
         <Suspense fallback={<LoadingFallback />}>
-          <KitchenDisplay onBack={() => setCurrentView(user?.role === 'admin' ? 'dashboard' : 'login')} onNavigate={handleNavigate} />
+          <KitchenDisplay onBack={() => setCurrentView((user?.role === 'admin' || user?.role === 'tour') ? 'dashboard' : 'login')} onNavigate={handleNavigate} />
         </Suspense>
       );
   }
 
   // Inventory
-  if (currentView === 'inventory' && isAuthenticated && user?.role === 'admin') {
+  if (currentView === 'inventory' && isAuthenticated && (user?.role === 'admin' || user?.role === 'tour')) {
       return (
         <Suspense fallback={<LoadingFallback />}>
           <InventoryManagement 
@@ -184,7 +184,7 @@ const App: React.FC = () => {
   }
 
   // Cash Register
-  if (currentView === 'cash_register' && isAuthenticated && user?.role === 'admin') {
+  if (currentView === 'cash_register' && isAuthenticated && (user?.role === 'admin' || user?.role === 'tour')) {
       return (
         <Suspense fallback={<LoadingFallback />}>
           <CashRegisterScreen employeeId={user.id} onNavigate={handleNavigate} />
@@ -193,7 +193,7 @@ const App: React.FC = () => {
   }
 
   // Analytics
-  if (currentView === 'analytics' && isAuthenticated && user?.role === 'admin') {
+  if (currentView === 'analytics' && isAuthenticated && (user?.role === 'admin' || user?.role === 'tour')) {
       return (
         <Suspense fallback={<LoadingFallback />}>
           <AnalyticsScreen onNavigate={handleNavigate} />
@@ -202,10 +202,10 @@ const App: React.FC = () => {
   }
 
   // Menu Engineering
-  if (currentView === 'menu_engineering' && isAuthenticated && user?.role === 'admin') {
+  if (currentView === 'menu_engineering' && isAuthenticated && (user?.role === 'admin' || user?.role === 'tour')) {
       return (
         <Suspense fallback={<LoadingFallback />}>
-          <Layout currentView={currentView} onNavigate={handleNavigate}>
+          <Layout>
             <MenuEngineeringScreen onNavigate={handleNavigate} />
           </Layout>
         </Suspense>
