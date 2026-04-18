@@ -4,6 +4,7 @@ import { Employee, Role, UserRole } from '../../types';
 import { getAllEmployees, createEmployee, updateEmployee, deleteEmployee } from '../../services/employeeService';
 import { getAllRoles, createRole, deleteRole, updateRole } from '../../services/roleService';
 import { supabase } from '../../Supabase';
+import { MODULES, hasModuleAccess } from '../../utils/permissions';
 
 const UserManagement: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -30,6 +31,7 @@ const UserManagement: React.FC = () => {
     role: 'waiter',
     active: true
   });
+  const [userModulePermissions, setUserModulePermissions] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
 
   // Role Manager State
@@ -84,6 +86,7 @@ const UserManagement: React.FC = () => {
         role: employee.role,
         active: employee.active
       });
+      setUserModulePermissions(employee.preferences?.module_permissions || {});
     } else {
       setEditingEmployee(null);
       const defaultRole = roles.length > 0 ? roles[0].name : 'waiter';
@@ -93,6 +96,7 @@ const UserManagement: React.FC = () => {
         role: defaultRole,
         active: true
       });
+      setUserModulePermissions({});
     }
     setIsModalOpen(true);
   };
@@ -129,14 +133,21 @@ const UserManagement: React.FC = () => {
         const updates: any = {
             name: formData.name,
             role: formData.role,
-            active: formData.active
+            active: formData.active,
+            preferences: {
+                ...(editingEmployee?.preferences || {}),
+                module_permissions: userModulePermissions
+            }
         };
         if (formData.pin.trim() !== '') {
             updates.pin = formData.pin;
         }
         await updateEmployee(editingEmployee.id, updates);
       } else {
-        await createEmployee(formData as any);
+        await createEmployee({
+            ...formData, 
+            preferences: { module_permissions: userModulePermissions }
+        } as any);
       }
       setIsModalOpen(false);
       await loadData(); 
@@ -443,6 +454,42 @@ const UserManagement: React.FC = () => {
                                         <Settings2 size={20} />
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-brand-700/50">
+                            <p className="text-sm font-bold text-gray-300 uppercase mb-3 px-1">Permisos por Módulo</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {MODULES.map(mod => {
+                                    const isAllowed = hasModuleAccess(mod.id, formData.role, userModulePermissions);
+                                    
+                                    return (
+                                        <label key={mod.id} className={`flex items-center justify-between cursor-pointer group p-3 rounded-lg border transition-colors ${isAllowed ? 'bg-brand-900 border-brand-600/50 hover:border-brand-500' : 'bg-brand-900/30 border-brand-700/30 hover:border-brand-600/50'}`}>
+                                            <span className={`text-sm transition-colors ${isAllowed ? 'text-white font-medium' : 'text-gray-400 group-hover:text-gray-300'}`}>{mod.label}</span>
+                                            <div className="relative inline-flex items-center cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="sr-only peer"
+                                                    checked={isAllowed}
+                                                    onChange={(e) => {
+                                                        const newVal = e.target.checked;
+                                                        setUserModulePermissions(prev => ({
+                                                            ...prev,
+                                                            [mod.id]: newVal
+                                                        }));
+                                                    }}
+                                                />
+                                                <div className="w-9 h-5 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-accent opacity-90"></div>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                            <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/20 rounded-lg flex items-start gap-2">
+                                <AlertCircle size={16} className="text-blue-400 shrink-0 mt-0.5" />
+                                <p className="text-xs text-blue-300/80 leading-relaxed">
+                                    Por defecto los accesos se pre-calculan dependiendo del rol elegido. Si cambias el interruptor, estarás estableciendo un <strong>permiso específico (forzado)</strong> que sobrescribirá el permiso predeterminado del rol para ese usuario concreto.
+                                </p>
                             </div>
                         </div>
                     </div>

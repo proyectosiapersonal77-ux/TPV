@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, ViewState } from '../types';
-import { LogOut, ChefHat, Utensils, ShieldAlert, User, LayoutGrid, Package, Wifi, WifiOff, RefreshCw, Settings, Banknote, BarChart3, Volume2, VolumeX, X, Save, Monitor } from 'lucide-react';
+import { LogOut, ChefHat, Utensils, ShieldAlert, User, LayoutGrid, Package, Wifi, WifiOff, RefreshCw, Settings, Banknote, BarChart3, Volume2, VolumeX, X, Save, Monitor, Lightbulb } from 'lucide-react';
 import { syncDatabase, processSyncQueue } from '../services/syncService';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../Supabase';
+import { hasModuleAccess } from '../utils/permissions';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -142,7 +143,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
            </button>
            
            {/* Direct Config Button for Admins instead of Navigation Menu */}
-           {(userRole?.permissions?.can_manage_settings || user.role.toLowerCase() === UserRole.ADMIN) && (
+           {hasModuleAccess('module_config', user.role, user.preferences?.module_permissions) && (
                <button 
                  onClick={() => onNavigate('config')}
                  className="bg-brand-700 hover:bg-brand-600 text-gray-200 border border-brand-600 p-2.5 rounded-lg transition-colors shadow-lg active:scale-95"
@@ -173,60 +174,81 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
             <p className="text-gray-400 mb-8">Has iniciado sesión correctamente.</p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-               <button 
-                  onClick={() => onNavigate('tables')}
-                  className="w-full bg-brand-accent hover:bg-brand-accentHover text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-brand-accent/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
-               >
-                  <LayoutGrid size={32} />
-                  Plano de Mesas
-                  <span className="text-xs font-normal opacity-80">TPV / Comandas</span>
-               </button>
+               {hasModuleAccess('module_tables', user.role, user.preferences?.module_permissions) && (
+                   <button 
+                      onClick={() => onNavigate('tables')}
+                      className="w-full bg-brand-accent hover:bg-brand-accentHover text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-brand-accent/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                   >
+                      <LayoutGrid size={32} />
+                      Plano de Mesas
+                      <span className="text-xs font-normal opacity-80">TPV / Comandas</span>
+                   </button>
+               )}
 
-               <button 
-                  onClick={() => onNavigate('kitchen')}
-                  className="w-full bg-orange-700 hover:bg-orange-600 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-orange-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
-               >
-                  <ChefHat size={32} />
-                  Cocina
-                  <span className="text-xs font-normal opacity-80">Ver Comandas (KDS)</span>
-               </button>
+               {hasModuleAccess('module_kitchen', user.role, user.preferences?.module_permissions) && (
+                   <button 
+                      onClick={() => onNavigate('kitchen')}
+                      className="w-full bg-orange-700 hover:bg-orange-600 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-orange-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                   >
+                      <ChefHat size={32} />
+                      Cocina
+                      <span className="text-xs font-normal opacity-80">Ver Comandas (KDS)</span>
+                   </button>
+               )}
                
-               <button 
-                  onClick={() => onNavigate('cfd')}
-                  className="w-full bg-teal-700 hover:bg-teal-600 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-teal-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
-               >
-                  <Monitor size={32} />
-                  Visor de Cliente
-                  <span className="text-xs font-normal opacity-80">Pantalla CFD</span>
-               </button>
+               {hasModuleAccess('module_cfd', user.role, user.preferences?.module_permissions) && (
+                   <button 
+                      onClick={() => onNavigate('cfd')}
+                      className="w-full bg-teal-700 hover:bg-teal-600 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-teal-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                   >
+                      <Monitor size={32} />
+                      Visor de Cliente
+                      <span className="text-xs font-normal opacity-80">Pantalla CFD</span>
+                   </button>
+               )}
                
-               {user.role === UserRole.ADMIN && (
-                  <>
-                      <button 
-                          onClick={() => onNavigate('inventory')}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
-                      >
-                          <Package size={32} />
-                          Inventario y Carta
-                          <span className="text-xs font-normal opacity-80">Gestión de Stock / Productos</span>
-                      </button>
-                      <button 
-                          onClick={() => onNavigate('cash_register')}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-green-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
-                      >
-                          <Banknote size={32} />
-                          Gestión de Caja
-                          <span className="text-xs font-normal opacity-80">Apertura, Cierre y Movimientos</span>
-                      </button>
-                      <button 
-                          onClick={() => onNavigate('analytics')}
-                          className="w-full bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-purple-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
-                      >
-                          <BarChart3 size={32} />
-                          Finanzas y Analítica
-                          <span className="text-xs font-normal opacity-80">Cierre Z, Impuestos y Resumen</span>
-                      </button>
-                  </>
+               {hasModuleAccess('module_inventory', user.role, user.preferences?.module_permissions) && (
+                   <button 
+                       onClick={() => onNavigate('inventory')}
+                       className="w-full bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                   >
+                       <Package size={32} />
+                       Inventario y Carta
+                       <span className="text-xs font-normal opacity-80">Gestión de Stock / Productos</span>
+                   </button>
+               )}
+
+               {hasModuleAccess('module_menu_engineering', user.role, user.preferences?.module_permissions) && (
+                   <button 
+                       onClick={() => onNavigate('menu_engineering')}
+                       className="w-full bg-yellow-600 hover:bg-yellow-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-yellow-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                   >
+                       <Lightbulb size={32} />
+                       Ingeniería de Menú
+                       <span className="text-xs font-normal opacity-80">Rentabilidad y Popularidad</span>
+                   </button>
+               )}
+
+               {hasModuleAccess('module_cash_register', user.role, user.preferences?.module_permissions) && (
+                   <button 
+                       onClick={() => onNavigate('cash_register')}
+                       className="w-full bg-green-600 hover:bg-green-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-green-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                   >
+                       <Banknote size={32} />
+                       Gestión de Caja
+                       <span className="text-xs font-normal opacity-80">Apertura, Cierre y Movimientos</span>
+                   </button>
+               )}
+
+               {hasModuleAccess('module_analytics', user.role, user.preferences?.module_permissions) && (
+                   <button 
+                       onClick={() => onNavigate('analytics')}
+                       className="w-full bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-2xl font-bold text-lg shadow-lg shadow-purple-600/20 transition-all active:scale-95 flex flex-col items-center justify-center gap-2"
+                   >
+                       <BarChart3 size={32} />
+                       Finanzas y Analítica
+                       <span className="text-xs font-normal opacity-80">Cierre Z, Impuestos y Resumen</span>
+                   </button>
                )}
             </div>
           </div>
