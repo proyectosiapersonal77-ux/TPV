@@ -90,6 +90,8 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   
   // Payment Logic State
   const [paymentMode, setPaymentMode] = useState<'full' | 'items' | 'diners' | 'manual'>('full');
+  const [showCashInput, setShowCashInput] = useState(false);
+  const [cashTendered, setCashTendered] = useState<string>('');
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [discountInput, setDiscountInput] = useState('');
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed_amount'>('percentage');
@@ -403,6 +405,8 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
       }
       
       setPaymentMode('full'); // Reset mode
+      setShowCashInput(false);
+      setCashTendered('');
       setPaymentModalOpen(true);
   };
 
@@ -600,6 +604,8 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
   const SplitByItems = ({ order, onClose }: { order: Order, onClose: () => void }) => {
       const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
       const [submitting, setSubmitting] = useState(false);
+      const [showCashInput, setShowCashInput] = useState(false);
+      const [cashTendered, setCashTendered] = useState<string>('');
 
       const items = order.items || [];
       const selectedItemsList = items.filter(i => selectedItems.has(i.id));
@@ -721,66 +727,123 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
       };
 
       return (
-          <div className="flex flex-col h-full animate-in fade-in">
-              <div className="flex-1 overflow-y-auto space-y-2 mb-4 bg-brand-900/50 p-2 rounded-xl border border-brand-700">
-                  {items.length === 0 && <p className="text-gray-500 text-center p-4">No hay artículos.</p>}
-                  {items.map(item => {
-                      const isSel = selectedItems.has(item.id);
-                      return (
-                          <div 
-                            key={item.id} 
-                            onClick={() => toggleItem(item.id)}
-                            className={`flex justify-between items-center p-3 rounded-lg border cursor-pointer transition-all ${isSel ? 'bg-brand-accent/20 border-brand-accent text-white' : 'bg-brand-800 border-brand-700 text-gray-400 hover:border-gray-500'}`}
-                          >
-                             <div className="flex items-center gap-3">
-                                 <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSel ? 'bg-brand-accent border-brand-accent' : 'border-gray-600'}`}>
-                                     {isSel && <CheckCircle2 size={14} className="text-white"/>}
-                                 </div>
-                                 <div className="flex flex-col">
-                                     <span className={isSel ? "font-bold" : ""}>{item.quantity}x {item.product_name}</span>
-                                     <span className="text-xs opacity-70">{(item.price * item.quantity).toFixed(2)}€</span>
-                                 </div>
-                             </div>
-                             <span className="font-mono font-bold">{(item.price * item.quantity).toFixed(2)}€</span>
-                          </div>
-                      );
-                  })}
-              </div>
-              <div className="flex flex-col bg-brand-900 p-4 rounded-xl border border-brand-700">
-                  {discountTotal > 0 && (
-                      <div className="flex justify-between items-center mb-1 text-green-400">
-                          <span className="text-sm">Descuentos</span>
-                          <span className="text-sm font-bold">-{discountTotal.toFixed(2)}€</span>
+          <div className="flex flex-col flex-1 min-h-0 h-full animate-in fade-in">
+              {showCashInput ? (
+                  <div className="flex flex-col h-full justify-center animate-in fade-in zoom-in-95">
+                      <div className="mb-6 flex flex-col items-center">
+                          <p className="text-gray-400 mb-1 uppercase tracking-widest text-xs font-bold">Total a Pagar</p>
+                          <div className="text-4xl font-bold text-white font-mono">{finalSelectedTotal.toFixed(2)}€</div>
                       </div>
-                  )}
-                  <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Total Seleccionado</span>
-                      <span className="text-2xl font-bold text-brand-accent">{finalSelectedTotal.toFixed(2)}€</span>
+
+                      <div className="mb-6">
+                          <label className="block text-gray-400 text-sm mb-2 text-center">Efectivo Entregado</label>
+                          <div className="relative max-w-xs mx-auto">
+                              <input 
+                                  type="number" 
+                                  step="0.01"
+                                  autoFocus
+                                  value={cashTendered}
+                                  onChange={(e) => setCashTendered(e.target.value)}
+                                  className="w-full bg-brand-900 border-2 border-green-500/50 rounded-xl px-4 py-4 text-3xl text-center outline-none focus:border-green-400 text-white font-mono"
+                                  placeholder="0.00"
+                              />
+                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-2xl">€</span>
+                          </div>
+                      </div>
+
+                      {cashTendered && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) >= finalSelectedTotal && (
+                          <div className="mb-8 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-center max-w-xs mx-auto w-full">
+                              <p className="text-green-400/80 mb-1 uppercase tracking-widest text-xs font-bold">Cambio a Devolver</p>
+                              <div className="text-3xl font-bold text-green-400 font-mono">{(parseFloat(cashTendered) - finalSelectedTotal).toFixed(2)}€</div>
+                          </div>
+                      )}
+
+                      {cashTendered && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) < finalSelectedTotal && (
+                          <div className="mb-8 p-4 text-center max-w-xs mx-auto w-full">
+                              <p className="text-red-400 font-bold">Faltan {(finalSelectedTotal - parseFloat(cashTendered)).toFixed(2)}€</p>
+                          </div>
+                      )}
+
+                      <div className="flex gap-4 mt-auto justify-center max-w-md mx-auto w-full">
+                          <button 
+                              onClick={() => setShowCashInput(false)} 
+                              className="flex-1 py-4 font-bold text-gray-300 bg-brand-700 hover:bg-brand-600 rounded-xl transition-colors shrink-0"
+                          >
+                              Volver
+                          </button>
+                          <button 
+                              onClick={() => handleSplitAndPay('cash')} 
+                              disabled={!cashTendered || isNaN(parseFloat(cashTendered)) || parseFloat(cashTendered) < finalSelectedTotal || submitting}
+                              className="flex-1 py-4 font-bold text-white bg-green-600 hover:bg-green-500 rounded-xl disabled:opacity-50 disabled:bg-brand-800 disabled:text-gray-500 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2 shrink-0"
+                          >
+                              {submitting ? <Loader2 className="animate-spin" /> : <Banknote size={24} />}
+                              Cobrar
+                          </button>
+                      </div>
                   </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                  <button 
-                    onClick={() => handleSplitAndPay('cash')}
-                    disabled={selectedItems.size === 0 || submitting}
-                    className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg"
-                  >
-                      {submitting ? <Loader2 className="animate-spin" /> : <Banknote size={24} />}
-                      EFECTIVO ({finalSelectedTotal.toFixed(2)}€)
-                  </button>
-                  <button 
-                    onClick={() => handleSplitAndPay('card')}
-                    disabled={selectedItems.size === 0 || submitting}
-                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg"
-                  >
-                      {submitting ? <Loader2 className="animate-spin" /> : <CreditCard size={24} />}
-                      TARJETA ({finalSelectedTotal.toFixed(2)}€)
-                  </button>
-              </div>
+              ) : (
+                  <>
+                      <div className="flex-1 overflow-y-auto space-y-2 mb-4 bg-brand-900/50 p-2 rounded-xl border border-brand-700">
+                          {items.length === 0 && <p className="text-gray-500 text-center p-4">No hay artículos.</p>}
+                          {items.map(item => {
+                              const isSel = selectedItems.has(item.id);
+                              return (
+                                  <div 
+                                    key={item.id} 
+                                    onClick={() => toggleItem(item.id)}
+                                    className={`flex justify-between items-center p-3 rounded-lg border cursor-pointer transition-all ${isSel ? 'bg-brand-accent/20 border-brand-accent text-white' : 'bg-brand-800 border-brand-700 text-gray-400 hover:border-gray-500'}`}
+                                  >
+                                     <div className="flex items-center gap-3">
+                                         <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSel ? 'bg-brand-accent border-brand-accent' : 'border-gray-600'}`}>
+                                             {isSel && <CheckCircle2 size={14} className="text-white"/>}
+                                         </div>
+                                         <div className="flex flex-col">
+                                             <span className={isSel ? "font-bold" : ""}>{item.quantity}x {item.product_name}</span>
+                                             <span className="text-xs opacity-70">{(item.price * item.quantity).toFixed(2)}€</span>
+                                         </div>
+                                     </div>
+                                     <span className="font-mono font-bold">{(item.price * item.quantity).toFixed(2)}€</span>
+                                  </div>
+                              );
+                          })}
+                      </div>
+                      <div className="flex flex-col bg-brand-900 p-4 rounded-xl border border-brand-700 shrink-0">
+                          {discountTotal > 0 && (
+                              <div className="flex justify-between items-center mb-1 text-green-400">
+                                  <span className="text-sm">Descuentos</span>
+                                  <span className="text-sm font-bold">-{discountTotal.toFixed(2)}€</span>
+                              </div>
+                          )}
+                          <div className="flex justify-between items-center">
+                              <span className="text-gray-400 text-sm">Total Seleccionado</span>
+                              <span className="text-2xl font-bold text-brand-accent">{finalSelectedTotal.toFixed(2)}€</span>
+                          </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mt-4 shrink-0">
+                          <button 
+                            onClick={() => setShowCashInput(true)}
+                            disabled={selectedItems.size === 0 || submitting}
+                            className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg shrink-0"
+                          >
+                              {submitting ? <Loader2 className="animate-spin" /> : <Banknote size={24} />}
+                              EFECTIVO ({finalSelectedTotal.toFixed(2)}€)
+                          </button>
+                          <button 
+                            onClick={() => handleSplitAndPay('card')}
+                            disabled={selectedItems.size === 0 || submitting}
+                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg shrink-0"
+                          >
+                              {submitting ? <Loader2 className="animate-spin" /> : <CreditCard size={24} />}
+                              TARJETA ({finalSelectedTotal.toFixed(2)}€)
+                          </button>
+                      </div>
+                  </>
+              )}
           </div>
       );
   };
 
-  const SplitByCalculator = ({ total, onClose, mode }: { total: number, onClose: () => void, mode: 'diners' | 'manual' }) => {
+    const SplitByCalculator = ({ total, onClose, mode }: { total: number, onClose: () => void, mode: 'diners' | 'manual' }) => {
       const [diners, setDiners] = useState(2);
       const [amountToPay, setAmountToPay] = useState<string>('');
       const [paidSoFar, setPaidSoFar] = useState(0);
@@ -852,8 +915,8 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
       };
 
       return (
-          <div className="flex flex-col h-full animate-in fade-in">
-              <div className="bg-brand-900 p-4 rounded-xl border border-brand-700 mb-4 flex justify-between items-center">
+          <div className="flex flex-col flex-1 min-h-0 h-full animate-in fade-in">
+              <div className="bg-brand-900 p-4 rounded-xl border border-brand-700 mb-4 flex justify-between items-center shrink-0">
                    <div>
                        <p className="text-xs text-gray-400 uppercase">Total Cuenta</p>
                        <p className="text-xl font-bold text-white">{total.toFixed(2)}€</p>
@@ -1580,7 +1643,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                     {/* Mode Tabs */}
                     <div className="flex border-b border-brand-700 bg-brand-900/30 shrink-0 overflow-x-auto whitespace-nowrap hide-scrollbar">
                         <button 
-                            onClick={() => setPaymentMode('full')} 
+                            onClick={() => { setPaymentMode('full'); setShowCashInput(false); }} 
                             className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm uppercase flex items-center justify-center gap-2 border-b-2 ${paymentMode === 'full' ? 'border-brand-accent text-brand-accent bg-brand-accent/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-brand-800'}`}
                         >
                             <ArrowRight size={18} /> Completo
@@ -1606,31 +1669,88 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 flex-1 overflow-hidden">
+                    <div className="p-4 sm:p-6 flex-1 overflow-hidden flex flex-col min-h-0">
                         {paymentMode === 'full' && (
                             <div className="text-center flex flex-col h-full justify-center">
-                                <div className="mb-8">
-                                    <p className="text-gray-400 mb-2 uppercase tracking-widest text-sm font-bold">Total a Pagar</p>
-                                    <div className="text-5xl font-bold text-white font-mono">{calculateTotal().toFixed(2)}€</div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button 
-                                        onClick={() => processFullPayment('cash')} 
-                                        disabled={processing} 
-                                        className="w-full py-5 rounded-2xl bg-green-600 hover:bg-green-500 text-white font-bold flex flex-col items-center justify-center gap-2 text-xl shadow-lg shadow-green-900/20 active:scale-95 transition-all"
-                                    >
-                                        {processing ? <Loader2 className="animate-spin" /> : <Banknote size={32} />}
-                                        EFECTIVO
-                                    </button>
-                                    <button 
-                                        onClick={() => processFullPayment('card')} 
-                                        disabled={processing} 
-                                        className="w-full py-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex flex-col items-center justify-center gap-2 text-xl shadow-lg shadow-blue-900/20 active:scale-95 transition-all"
-                                    >
-                                        {processing ? <Loader2 className="animate-spin" /> : <CreditCard size={32} />}
-                                        TARJETA
-                                    </button>
-                                </div>
+                                {!showCashInput ? (
+                                    <>
+                                        <div className="mb-8">
+                                            <p className="text-gray-400 mb-2 uppercase tracking-widest text-sm font-bold">Total a Pagar</p>
+                                            <div className="text-5xl font-bold text-white font-mono">{calculateTotal().toFixed(2)}€</div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <button 
+                                                onClick={() => setShowCashInput(true)} 
+                                                disabled={processing} 
+                                                className="w-full py-5 rounded-2xl bg-green-600 hover:bg-green-500 text-white font-bold flex flex-col items-center justify-center gap-2 text-xl shadow-lg shadow-green-900/20 active:scale-95 transition-all"
+                                            >
+                                                {processing ? <Loader2 className="animate-spin" /> : <Banknote size={32} />}
+                                                EFECTIVO
+                                            </button>
+                                            <button 
+                                                onClick={() => processFullPayment('card')} 
+                                                disabled={processing} 
+                                                className="w-full py-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex flex-col items-center justify-center gap-2 text-xl shadow-lg shadow-blue-900/20 active:scale-95 transition-all"
+                                            >
+                                                {processing ? <Loader2 className="animate-spin" /> : <CreditCard size={32} />}
+                                                TARJETA
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col h-full animate-in fade-in zoom-in-95">
+                                        <div className="mb-6 flex flex-col items-center">
+                                            <p className="text-gray-400 mb-1 uppercase tracking-widest text-xs font-bold">Total a Pagar</p>
+                                            <div className="text-4xl font-bold text-white font-mono">{calculateTotal().toFixed(2)}€</div>
+                                        </div>
+
+                                        <div className="mb-6">
+                                            <label className="block text-gray-400 text-sm mb-2 text-center">Efectivo Entregado</label>
+                                            <div className="relative max-w-xs mx-auto">
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    autoFocus
+                                                    value={cashTendered}
+                                                    onChange={(e) => setCashTendered(e.target.value)}
+                                                    className="w-full bg-brand-900 border-2 border-green-500/50 rounded-xl px-4 py-4 text-3xl text-center outline-none focus:border-green-400 text-white font-mono"
+                                                    placeholder="0.00"
+                                                />
+                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-2xl">€</span>
+                                            </div>
+                                        </div>
+
+                                        {cashTendered && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) >= calculateTotal() && (
+                                            <div className="mb-8 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-center max-w-xs mx-auto w-full">
+                                                <p className="text-green-400/80 mb-1 uppercase tracking-widest text-xs font-bold">Cambio a Devolver</p>
+                                                <div className="text-3xl font-bold text-green-400 font-mono">{(parseFloat(cashTendered) - calculateTotal()).toFixed(2)}€</div>
+                                            </div>
+                                        )}
+
+                                        {cashTendered && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) < calculateTotal() && (
+                                            <div className="mb-8 p-4 text-center max-w-xs mx-auto w-full">
+                                                <p className="text-red-400 font-bold">Faltan {(calculateTotal() - parseFloat(cashTendered)).toFixed(2)}€</p>
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-4 mt-auto justify-center max-w-md mx-auto w-full">
+                                            <button 
+                                                onClick={() => setShowCashInput(false)} 
+                                                className="flex-1 py-4 font-bold text-gray-300 bg-brand-700 hover:bg-brand-600 rounded-xl transition-colors"
+                                            >
+                                                Volver
+                                            </button>
+                                            <button 
+                                                onClick={() => processFullPayment('cash')} 
+                                                disabled={!cashTendered || isNaN(parseFloat(cashTendered)) || parseFloat(cashTendered) < calculateTotal() || processing}
+                                                className="flex-1 py-4 font-bold text-white bg-green-600 hover:bg-green-500 rounded-xl disabled:opacity-50 disabled:bg-brand-800 disabled:text-gray-500 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                                            >
+                                                {processing ? <Loader2 className="animate-spin" /> : <Banknote size={24} />}
+                                                Cobrar
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 

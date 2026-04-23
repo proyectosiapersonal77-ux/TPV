@@ -227,16 +227,18 @@ export const getOpenOrders = async (): Promise<{id: string, table_id: string, to
 };
 
 // Create a new Order (Offline First)
-export const createOrder = async (tableId: string, employeeId: string): Promise<Order> => {
+export const createOrder = async (tableId: string, employeeId: string, allowDuplicate: boolean = false): Promise<Order> => {
     applyTourRestriction();
     // Check if table is child, if so, redirect to parent
     const table = await db.restaurantTables.get(tableId);
     const finalTableId = (table && table.parent_id) ? table.parent_id : tableId;
 
     // Prevent duplicate open orders
-    const existingOrder = await getActiveOrderForTable(finalTableId);
-    if (existingOrder) {
-        return existingOrder;
+    if (!allowDuplicate) {
+        const existingOrder = await getActiveOrderForTable(finalTableId);
+        if (existingOrder) {
+            return existingOrder;
+        }
     }
 
     const newOrderId = uuidv4();
@@ -569,7 +571,7 @@ export const voidOrder = async (orderId: string, employeeId: string, reason: str
 
 // Split order: Moves specific items to a NEW order and updates totals
 export const splitOrder = async (originalOrder: Order, itemsToMove: OrderItem[], employeeId: string): Promise<string> => {
-    const newOrder = await createOrder(originalOrder.table_id, employeeId);
+    const newOrder = await createOrder(originalOrder.table_id, employeeId, true);
     const itemIdsToMove = new Set(itemsToMove.map(i => i.id));
 
     const moveTotal = itemsToMove.reduce((acc, i) => acc + (i.price * i.quantity), 0);
