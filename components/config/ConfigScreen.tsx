@@ -20,7 +20,7 @@ const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onNavigate }) => {
   const [activeView, setActiveView] = useState<ConfigView>('users');
 
   return (
-    <div className="flex h-screen w-screen bg-brand-900 text-white overflow-hidden items-center p-3 gap-3">
+    <div className="flex h-[100dvh] w-screen bg-brand-900 text-white overflow-hidden items-center p-3 gap-3">
       {/* Background decoration elements (Fixed position to not affect layout) */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
          <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-brand-accent/5 blur-[100px]"></div>

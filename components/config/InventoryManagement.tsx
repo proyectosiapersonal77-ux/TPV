@@ -1270,7 +1270,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
   if (loading) return <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-brand-accent" /></div>;
 
   return (
-    <div className="flex flex-col h-screen bg-brand-900 w-full overflow-hidden text-white relative">
+    <div className="flex flex-col h-[100dvh] bg-brand-900 w-full overflow-hidden text-white relative">
         
       <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-4 border-b border-brand-700 bg-brand-800 shrink-0">
          <div className="flex items-center gap-4">

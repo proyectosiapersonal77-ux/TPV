@@ -21,7 +21,7 @@ const MenuEngineeringScreen = React.lazy(() => import('./components/MenuEngineer
 const CFDScreen = React.lazy(() => import('./components/CFD/CFDScreen'));
 
 const LoadingFallback = () => (
-  <div className="flex-1 flex items-center justify-center h-screen bg-[#1A1A1A] text-white">
+  <div className="flex-1 flex items-center justify-center h-[100dvh] bg-[#1A1A1A] text-white">
     <div className="flex flex-col items-center space-y-4">
       <div className="w-12 h-12 border-4 border-[#F27D26] border-t-transparent rounded-full animate-spin"></div>
       <p className="text-gray-400 animate-pulse">Cargando módulo...</p>

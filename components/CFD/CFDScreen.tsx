@@ -108,7 +108,7 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
 
   if (!selectedTableId) {
     return (
-      <div className="flex flex-col h-screen bg-brand-900 p-6">
+      <div className="flex flex-col h-[100dvh] bg-brand-900 p-6">
         <div className="flex items-center gap-4 mb-8">
           <button 
             onClick={() => onNavigate('dashboard')}
@@ -148,7 +148,7 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
   const paymentUrl = `https://gastropos.app/pay/${currentOrder?.id || 'demo'}`;
 
   return (
-    <div className="flex flex-col h-screen bg-brand-900 text-white overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-brand-900 text-white overflow-hidden">
       {/* Header */}
       <header className="p-6 bg-brand-800 border-b border-brand-700 flex justify-between items-center shrink-0">
         <div className="flex items-center gap-4">

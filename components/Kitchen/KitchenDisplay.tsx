@@ -147,7 +147,7 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
     };
 
     return (
-        <div className="h-screen bg-gray-900 text-white flex flex-col">
+        <div className="h-[100dvh] bg-gray-900 text-white flex flex-col">
             <header className="bg-gray-800 p-4 shadow-md flex justify-between items-center border-b border-gray-700 shrink-0">
                 <div className="flex items-center gap-4">
                      <button onClick={onBack} className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600"><ArrowLeft size={20}/></button>

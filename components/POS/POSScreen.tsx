@@ -848,6 +848,8 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
       const [amountToPay, setAmountToPay] = useState<string>('');
       const [paidSoFar, setPaidSoFar] = useState(0);
       const [processing, setProcessing] = useState(false);
+      const [showCashInput, setShowCashInput] = useState(false);
+      const [cashTendered, setCashTendered] = useState<string>('');
 
       const remaining = Math.max(0, total - paidSoFar);
       
@@ -903,6 +905,8 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
               } else {
                   if (mode === 'manual') setAmountToPay('');
               }
+              setShowCashInput(false);
+              setCashTendered('');
           } catch (err: any) {
               if (err.message === 'TOUR_MODE_RESTRICTION') {
                   setProcessing(false);
@@ -916,72 +920,129 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
 
       return (
           <div className="flex flex-col flex-1 min-h-0 h-full animate-in fade-in">
-              <div className="bg-brand-900 p-4 rounded-xl border border-brand-700 mb-4 flex justify-between items-center shrink-0">
-                   <div>
-                       <p className="text-xs text-gray-400 uppercase">Total Cuenta</p>
-                       <p className="text-xl font-bold text-white">{total.toFixed(2)}€</p>
-                   </div>
-                   <div className="text-right">
-                       <p className="text-xs text-brand-accent uppercase font-bold">Restante</p>
-                       <p className="text-2xl font-bold text-brand-accent">{remaining.toFixed(2)}€</p>
-                   </div>
-              </div>
-
-              {mode === 'diners' && (
-                  <div className="mb-6">
-                      <label className="block text-sm text-gray-400 mb-2">Número de personas</label>
-                      <div className="flex gap-4 items-center bg-brand-800 p-2 rounded-xl border border-brand-700 justify-center">
-                          <button onClick={() => setDiners(Math.max(1, diners - 1))} className="w-12 h-12 bg-brand-700 rounded-lg flex items-center justify-center text-xl font-bold hover:bg-brand-600"><Minus size={20}/></button>
-                          <span className="text-2xl font-bold w-12 text-center">{diners}</span>
-                          <button onClick={() => setDiners(diners + 1)} className="w-12 h-12 bg-brand-700 rounded-lg flex items-center justify-center text-xl font-bold hover:bg-brand-600"><Plus size={20}/></button>
+              {showCashInput ? (
+                  <div className="flex flex-col h-full justify-center animate-in fade-in zoom-in-95">
+                      <div className="mb-6 flex flex-col items-center">
+                          <p className="text-gray-400 mb-1 uppercase tracking-widest text-xs font-bold">Importe a Cobrar</p>
+                          <div className="text-4xl font-bold text-white font-mono">{parseFloat(amountToPay).toFixed(2)}€</div>
                       </div>
-                  </div>
-              )}
 
-              <div className="flex-1">
-                  <label className="block text-sm text-gray-400 mb-2">Importe a Cobrar Ahora</label>
-                  <div className="relative">
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        value={amountToPay}
-                        onChange={(e) => setAmountToPay(e.target.value)}
-                        className="w-full bg-brand-900 border border-brand-600 rounded-xl p-4 text-3xl font-bold text-center text-white focus:border-brand-accent outline-none font-mono"
-                        placeholder="0.00"
-                        autoFocus
-                      />
-                      <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-                          <div className="relative flex items-center">
-                              <span className="text-3xl font-bold opacity-0 font-mono">{amountToPay || '0.00'}</span>
-                              <span className="absolute left-full ml-1 text-gray-500 font-bold text-2xl">€</span>
+                      <div className="mb-6">
+                          <label className="block text-gray-400 text-sm mb-2 text-center">Efectivo Entregado</label>
+                          <div className="relative max-w-xs mx-auto">
+                              <input 
+                                  type="number" 
+                                  step="0.01"
+                                  autoFocus
+                                  value={cashTendered}
+                                  onChange={(e) => setCashTendered(e.target.value)}
+                                  className="w-full bg-brand-900 border-2 border-green-500/50 rounded-xl px-4 py-4 text-3xl text-center outline-none focus:border-green-400 text-white font-mono"
+                                  placeholder="0.00"
+                              />
+                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-2xl">€</span>
                           </div>
                       </div>
-                  </div>
-                  {mode === 'diners' && (
-                      <p className="text-center text-xs text-gray-500 mt-2">División sugerida: {(remaining / diners).toFixed(2)}€ / pers</p>
-                  )}
-              </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                  <button 
-                    onClick={() => handlePartialPay('cash')}
-                    disabled={!amountToPay || parseFloat(amountToPay) <= 0 || processing}
-                    className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg"
-                  >
-                      {processing ? <Loader2 className="animate-spin" /> : <Banknote size={24} />}
-                      EFECTIVO {amountToPay ? parseFloat(amountToPay).toFixed(2) : '0.00'}€
-                      {Math.abs(remaining - (parseFloat(amountToPay) || 0)) < 0.1 && <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded">(FINALIZAR)</span>}
-                  </button>
-                  <button 
-                    onClick={() => handlePartialPay('card')}
-                    disabled={!amountToPay || parseFloat(amountToPay) <= 0 || processing}
-                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg"
-                  >
-                      {processing ? <Loader2 className="animate-spin" /> : <CreditCard size={24} />}
-                      TARJETA {amountToPay ? parseFloat(amountToPay).toFixed(2) : '0.00'}€
-                      {Math.abs(remaining - (parseFloat(amountToPay) || 0)) < 0.1 && <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded">(FINALIZAR)</span>}
-                  </button>
-              </div>
+                      {cashTendered && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) >= parseFloat(amountToPay) && (
+                          <div className="mb-8 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-center max-w-xs mx-auto w-full">
+                              <p className="text-green-400/80 mb-1 uppercase tracking-widest text-xs font-bold">Cambio a Devolver</p>
+                              <div className="text-3xl font-bold text-green-400 font-mono">{(parseFloat(cashTendered) - parseFloat(amountToPay)).toFixed(2)}€</div>
+                          </div>
+                      )}
+
+                      {cashTendered && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) < parseFloat(amountToPay) && (
+                          <div className="mb-8 p-4 text-center max-w-xs mx-auto w-full">
+                              <p className="text-red-400 font-bold">Faltan {(parseFloat(amountToPay) - parseFloat(cashTendered)).toFixed(2)}€</p>
+                          </div>
+                      )}
+
+                      <div className="flex gap-4 mt-auto justify-center max-w-md mx-auto w-full">
+                          <button 
+                              onClick={() => setShowCashInput(false)} 
+                              className="flex-1 py-4 font-bold text-gray-300 bg-brand-700 hover:bg-brand-600 rounded-xl transition-colors shrink-0"
+                          >
+                              Volver
+                          </button>
+                          <button 
+                              onClick={() => handlePartialPay('cash')} 
+                              disabled={!cashTendered || isNaN(parseFloat(cashTendered)) || parseFloat(cashTendered) < parseFloat(amountToPay) || processing}
+                              className="flex-1 py-4 font-bold text-white bg-green-600 hover:bg-green-500 rounded-xl disabled:opacity-50 disabled:bg-brand-800 disabled:text-gray-500 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2 shrink-0"
+                          >
+                              {processing ? <Loader2 className="animate-spin" /> : <Banknote size={24} />}
+                              Cobrar
+                          </button>
+                      </div>
+                  </div>
+              ) : (
+                  <>
+                      <div className="bg-brand-900 p-4 rounded-xl border border-brand-700 mb-4 flex justify-between items-center shrink-0">
+                           <div>
+                               <p className="text-xs text-gray-400 uppercase">Total Cuenta</p>
+                               <p className="text-xl font-bold text-white">{total.toFixed(2)}€</p>
+                           </div>
+                           <div className="text-right">
+                               <p className="text-xs text-brand-accent uppercase font-bold">Restante</p>
+                               <p className="text-2xl font-bold text-brand-accent">{remaining.toFixed(2)}€</p>
+                           </div>
+                      </div>
+
+                      {mode === 'diners' && (
+                          <div className="mb-6">
+                              <label className="block text-sm text-gray-400 mb-2">Número de personas</label>
+                              <div className="flex gap-4 items-center bg-brand-800 p-2 rounded-xl border border-brand-700 justify-center">
+                                  <button onClick={() => setDiners(Math.max(1, diners - 1))} className="w-12 h-12 bg-brand-700 rounded-lg flex items-center justify-center text-xl font-bold hover:bg-brand-600"><Minus size={20}/></button>
+                                  <span className="text-2xl font-bold w-12 text-center">{diners}</span>
+                                  <button onClick={() => setDiners(diners + 1)} className="w-12 h-12 bg-brand-700 rounded-lg flex items-center justify-center text-xl font-bold hover:bg-brand-600"><Plus size={20}/></button>
+                              </div>
+                          </div>
+                      )}
+
+                      <div className="flex-1">
+                          <label className="block text-sm text-gray-400 mb-2">Importe a Cobrar Ahora</label>
+                          <div className="relative">
+                              <input 
+                                type="number" 
+                                step="0.01"
+                                value={amountToPay}
+                                onChange={(e) => setAmountToPay(e.target.value)}
+                                className="w-full bg-brand-900 border border-brand-600 rounded-xl p-4 text-3xl font-bold text-center text-white focus:border-brand-accent outline-none font-mono"
+                                placeholder="0.00"
+                                autoFocus
+                              />
+                              <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+                                  <div className="relative flex items-center">
+                                      <span className="text-3xl font-bold opacity-0 font-mono">{amountToPay || '0.00'}</span>
+                                      <span className="absolute left-full ml-1 text-gray-500 font-bold text-2xl">€</span>
+                                  </div>
+                              </div>
+                          </div>
+                          {mode === 'diners' && (
+                              <p className="text-center text-xs text-gray-500 mt-2">División sugerida: {(remaining / diners).toFixed(2)}€ / pers</p>
+                          )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mt-4">
+                          <button 
+                            onClick={() => setShowCashInput(true)}
+                            disabled={!amountToPay || parseFloat(amountToPay) <= 0 || processing}
+                            className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg shrink-0"
+                          >
+                              {processing ? <Loader2 className="animate-spin" /> : <Banknote size={24} />}
+                              EFECTIVO {amountToPay ? parseFloat(amountToPay).toFixed(2) : '0.00'}€
+                              {Math.abs(remaining - (parseFloat(amountToPay) || 0)) < 0.1 && <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded">(FINALIZAR)</span>}
+                          </button>
+                          <button 
+                            onClick={() => handlePartialPay('card')}
+                            disabled={!amountToPay || parseFloat(amountToPay) <= 0 || processing}
+                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-brand-800 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg shrink-0"
+                          >
+                              {processing ? <Loader2 className="animate-spin" /> : <CreditCard size={24} />}
+                              TARJETA {amountToPay ? parseFloat(amountToPay).toFixed(2) : '0.00'}€
+                              {Math.abs(remaining - (parseFloat(amountToPay) || 0)) < 0.1 && <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded">(FINALIZAR)</span>}
+                          </button>
+                      </div>
+                  </>
+              )}
           </div>
       );
   };
@@ -1402,10 +1463,10 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
       onBack();
   };
 
-  if (loadingProducts) return <div className="flex items-center justify-center h-screen bg-brand-900 text-white"><Loader2 className="animate-spin mr-2"/> Cargando TPV...</div>;
+  if (loadingProducts) return <div className="flex items-center justify-center h-[100dvh] bg-brand-900 text-white"><Loader2 className="animate-spin mr-2"/> Cargando TPV...</div>;
 
   return (
-    <div className="flex h-screen bg-brand-900 text-white overflow-hidden font-sans">
+    <div className="flex h-[100dvh] bg-brand-900 text-white overflow-hidden font-sans">
         
         {/* === LEFT SIDEBAR (Desktop Only) === */}
         <div className="hidden md:flex w-24 md:w-32 bg-brand-800 border-r border-brand-700 flex-col shrink-0 overflow-y-auto no-scrollbar z-10">

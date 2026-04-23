@@ -98,7 +98,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col h-screen p-6">
+    <div className="flex flex-col h-full p-6">
       {/* Top Bar */}
       <header className="flex justify-between items-center bg-brand-800 p-4 rounded-xl shadow-lg border border-brand-700 mb-6 relative z-50">
         <div className="flex items-center gap-4">
@@ -177,7 +177,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                {hasModuleAccess('module_tables', user.role, user.preferences?.module_permissions) && (
                    <button 
                       onClick={() => onNavigate('tables')}

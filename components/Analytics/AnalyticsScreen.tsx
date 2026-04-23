@@ -271,7 +271,7 @@ export default function AnalyticsScreen({ onNavigate }: AnalyticsScreenProps) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-brand-900 text-white animate-in fade-in">
+        <div className="flex flex-col h-[100dvh] bg-brand-900 text-white animate-in fade-in">
             <header className="bg-brand-800 p-4 flex items-center justify-between border-b border-brand-700 shrink-0 print:hidden">
                 <div className="flex items-center gap-4">
                     <button 

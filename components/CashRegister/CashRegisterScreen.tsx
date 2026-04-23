@@ -128,7 +128,7 @@ export default function CashRegisterScreen({ employeeId, onNavigate }: CashRegis
     }
 
     return (
-        <div className="flex flex-col h-full bg-brand-900 text-white animate-in fade-in">
+        <div className="flex flex-col h-[100dvh] bg-brand-900 text-white animate-in fade-in">
             {/* Header */}
             <header className="bg-brand-800 p-4 flex items-center justify-between border-b border-brand-700 shrink-0">
                 <div className="flex items-center gap-4">

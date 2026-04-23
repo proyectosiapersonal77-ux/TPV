@@ -228,7 +228,7 @@ const TablePlan: React.FC<TablePlanProps> = ({ user, onLogout, onSelectTable, on
   const filteredTables = tables.filter(t => t.zone === activeZone);
 
   return (
-    <div className="flex flex-col h-screen w-full bg-brand-900 text-white overflow-hidden relative">
+    <div className="flex flex-col h-[100dvh] w-full bg-brand-900 text-white overflow-hidden relative">
       
       {/* Top Bar */}
       <header className="flex justify-between items-center bg-brand-800 p-4 border-b border-brand-700 shadow-md shrink-0">

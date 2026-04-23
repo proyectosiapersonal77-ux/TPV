@@ -45,7 +45,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [isTour]);
 
   return (
-    <div className="min-h-screen bg-brand-900 text-white font-sans antialiased overflow-hidden selection:bg-brand-accent selection:text-white flex flex-col relative">
+    <div className="h-[100dvh] w-screen bg-brand-900 text-white font-sans antialiased overflow-hidden selection:bg-brand-accent selection:text-white flex flex-col relative">
       {/* Background decoration elements */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 opacity-20 pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-brand-accent blur-[120px]"></div>
