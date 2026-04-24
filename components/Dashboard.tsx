@@ -98,10 +98,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col h-full p-6">
+    <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
       {/* Top Bar */}
-      <header className="flex justify-between items-center bg-brand-800 p-4 rounded-xl shadow-lg border border-brand-700 mb-6 relative z-50">
-        <div className="flex items-center gap-4">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-brand-800 p-4 rounded-xl shadow-lg border border-brand-700 mb-6 relative z-50 shrink-0 gap-4 w-full">
+        <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
           {logoBase64 ? (
               <img src={logoBase64} alt="Logo" className="h-10 w-auto object-contain" />
           ) : (
@@ -119,7 +119,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
              )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
            <button 
              onClick={handleManualSync}
              disabled={!isOnline || syncing}
@@ -164,9 +164,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto pb-4">
-        <div className="flex flex-col items-center justify-center min-h-full">
-          <div className="bg-brand-800 border border-brand-700 p-6 sm:p-8 rounded-3xl text-center max-w-5xl shadow-2xl w-full">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-4 min-h-0">
+        <div className="min-h-full flex flex-col justify-start md:justify-center py-4">
+          <div className="bg-brand-800 border border-brand-700 p-4 sm:p-8 rounded-3xl text-center max-w-5xl shadow-2xl w-full mx-auto flex-shrink-0">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
                 <div>
                   {getRoleIcon(user.role)}

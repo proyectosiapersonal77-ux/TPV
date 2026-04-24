@@ -240,9 +240,9 @@ const App: React.FC = () => {
 
   return (
     <Layout>
-      <div className="flex-1 flex items-center justify-center w-full">
+      <div className="flex-1 w-full min-h-0 flex flex-col">
         {isAuthenticated && user && currentView === 'dashboard' ? (
-          <div className="w-full h-full animate-in zoom-in-95 duration-300">
+          <div className="flex-1 w-full animate-in zoom-in-95 duration-300 flex flex-col min-h-0">
             <Suspense fallback={<LoadingFallback />}>
               <Dashboard 
                 onLogout={handleLogout} 
@@ -251,7 +251,7 @@ const App: React.FC = () => {
             </Suspense>
           </div>
         ) : (
-          <div className="w-full px-4 animate-in fade-in zoom-in-95 duration-500">
+          <div className="w-full px-4 flex-1 flex flex-col justify-center items-center animate-in fade-in zoom-in-95 duration-500">
             <PinPad 
               onSuccess={handlePinSubmit} 
               isLoading={loginLoading}
