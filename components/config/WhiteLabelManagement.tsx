@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Save, Image as ImageIcon, Palette, Trash2, Moon, Sun } from 'lucide-react';
+import { Save, Image as ImageIcon, Palette, Trash2, Moon, Sun, Loader2 } from 'lucide-react';
+import { uploadProductImage } from '../../services/inventoryService';
 
 const WhiteLabelManagement: React.FC = () => {
     const [primaryColor, setPrimaryColor] = useState('#d97706'); // Default brand-accent
-    const [logoBase64, setLogoBase64] = useState<string | null>(null);
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark');
     const [saved, setSaved] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -15,7 +17,7 @@ const WhiteLabelManagement: React.FC = () => {
         }
         const storedLogo = localStorage.getItem('brandLogo');
         if (storedLogo) {
-            setLogoBase64(storedLogo);
+            setLogoUrl(storedLogo);
         }
         const storedTheme = localStorage.getItem('themeMode') as 'dark' | 'light';
         if (storedTheme) {
@@ -26,8 +28,8 @@ const WhiteLabelManagement: React.FC = () => {
     const handleSave = () => {
         localStorage.setItem('brandPrimaryColor', primaryColor);
         localStorage.setItem('themeMode', themeMode);
-        if (logoBase64) {
-            localStorage.setItem('brandLogo', logoBase64);
+        if (logoUrl) {
+            localStorage.setItem('brandLogo', logoUrl);
         } else {
             localStorage.removeItem('brandLogo');
         }
@@ -50,19 +52,24 @@ const WhiteLabelManagement: React.FC = () => {
         setTimeout(() => setSaved(false), 2000);
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setLogoBase64(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+        try {
+            setIsUploading(true);
+            const url = await uploadProductImage(file);
+            setLogoUrl(url);
+        } catch (error) {
+            console.error('Error al subir el logo:', error);
+            alert('Error al subir la imagen. Por favor, inténtelo de nuevo.');
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleRemoveLogo = () => {
-        setLogoBase64(null);
+        setLogoUrl(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -154,12 +161,13 @@ const WhiteLabelManagement: React.FC = () => {
                             <div className="flex gap-3">
                                 <button 
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="bg-brand-700 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                                    disabled={isUploading}
+                                    className="bg-brand-700 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
                                 >
-                                    <ImageIcon size={18} />
+                                    {isUploading ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
                                     Seleccionar Imagen
                                 </button>
-                                {logoBase64 && (
+                                {logoUrl && (
                                     <button 
                                         onClick={handleRemoveLogo}
                                         className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 border border-red-500/20 hover:border-red-500"
@@ -172,8 +180,13 @@ const WhiteLabelManagement: React.FC = () => {
                         </div>
                         
                         <div className="w-48 h-32 bg-brand-900 rounded-xl border-2 border-dashed border-brand-600 flex items-center justify-center overflow-hidden shrink-0">
-                            {logoBase64 ? (
-                                <img src={logoBase64} alt="Logo Preview" className="max-w-full max-h-full object-contain p-2" />
+                            {logoUrl ? (
+                                <img src={logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain p-2" />
+                            ) : isUploading ? (
+                                <div className="text-gray-500 flex flex-col items-center">
+                                    <Loader2 size={32} className="mb-2 opacity-50 animate-spin" />
+                                    <span className="text-xs font-medium">Subiendo...</span>
+                                </div>
                             ) : (
                                 <div className="text-gray-500 flex flex-col items-center">
                                     <ImageIcon size={32} className="mb-2 opacity-50" />

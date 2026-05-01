@@ -14,7 +14,7 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
   const [tables, setTables] = useState<Table[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
-  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadTables = async () => {
@@ -25,7 +25,7 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
 
     const storedLogo = localStorage.getItem('brandLogo');
     if (storedLogo) {
-      setLogoBase64(storedLogo);
+      setLogoUrl(storedLogo);
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -152,8 +152,8 @@ const CFDScreen: React.FC<CFDScreenProps> = ({ onNavigate }) => {
       {/* Header */}
       <header className="p-6 bg-brand-800 border-b border-brand-700 flex justify-between items-center shrink-0">
         <div className="flex items-center gap-4">
-          {logoBase64 ? (
-            <img src={logoBase64} alt="Logo" className="h-12 w-auto object-contain" />
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
           ) : (
             <h1 className="text-3xl font-bold">GastroPOS</h1>
           )}

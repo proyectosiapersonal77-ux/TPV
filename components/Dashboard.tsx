@@ -20,7 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const [soundsEnabled, setSoundsEnabled] = useState(user?.preferences?.soundsEnabled !== false);
   const [savingPrefs, setSavingPrefs] = useState(false);
-  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
       const handleStatusChange = () => setIsOnline(navigator.onLine);
@@ -30,7 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
       // Load logo
       const loadLogo = () => {
           const storedLogo = localStorage.getItem('brandLogo');
-          setLogoBase64(storedLogo);
+          setLogoUrl(storedLogo);
       };
       loadLogo();
       window.addEventListener('brandUpdated', loadLogo);
@@ -102,8 +102,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
       {/* Top Bar */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-brand-800 p-4 rounded-xl shadow-lg border border-brand-700 mb-6 relative z-50 shrink-0 gap-4 w-full">
         <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
-          {logoBase64 ? (
-              <img src={logoBase64} alt="Logo" className="h-10 w-auto object-contain" />
+          {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
           ) : (
               <h1 className="text-xl font-bold text-white">GastroPOS</h1>
           )}
