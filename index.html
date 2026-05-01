@@ -58,14 +58,62 @@
         --bg-primary: #f8fafc;
       }
 
-      .light-mode .text-white {
-        color: var(--text-primary);
-      }
+      .light-mode .text-gray-200,
+      .light-mode .text-gray-300,
       .light-mode .text-gray-400 {
         color: var(--text-secondary);
       }
-      .light-mode .text-gray-300 {
-        color: #334155;
+      
+      .light-mode .text-white,
+      .light-mode .hover\:text-white:hover,
+      .light-mode .focus\:text-white:focus,
+      .light-mode .active\:text-white:active {
+        color: var(--text-primary) !important;
+      }
+      
+      .light-mode .text-gray-200,
+      .light-mode .hover\:text-gray-200:hover,
+      .light-mode .text-gray-300,
+      .light-mode .hover\:text-gray-300:hover,
+      .light-mode .text-gray-400,
+      .light-mode .hover\:text-gray-400:hover {
+        color: var(--text-secondary) !important;
+      }
+      
+      .light-mode .hover\:bg-brand-accent:hover,
+      .light-mode .hover\:bg-brand-accentHover:hover,
+      .light-mode .hover\:bg-red-400:hover,
+      .light-mode .hover\:bg-red-500:hover,
+      .light-mode .hover\:bg-red-600:hover,
+      .light-mode .hover\:bg-red-700:hover,
+      .light-mode .hover\:bg-blue-400:hover,
+      .light-mode .hover\:bg-blue-500:hover,
+      .light-mode .hover\:bg-blue-600:hover,
+      .light-mode .hover\:bg-green-400:hover,
+      .light-mode .hover\:bg-green-500:hover,
+      .light-mode .hover\:bg-green-600:hover,
+      .light-mode .hover\:bg-orange-500:hover,
+      .light-mode .hover\:bg-purple-500:hover,
+      .light-mode .hover\:bg-yellow-500:hover {
+        color: #ffffff !important;
+      }
+      
+      .light-mode .hover\:bg-brand-accent:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-brand-accentHover:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-red-400:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-red-500:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-red-600:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-red-700:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-blue-400:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-blue-500:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-blue-600:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-green-400:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-green-500:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-green-600:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-orange-500:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-purple-500:hover .hover\:text-white:hover,
+      .light-mode .hover\:bg-yellow-500:hover .hover\:text-white:hover {
+        color: #ffffff !important;
       }
       
       /* Keep buttons and colored badges white text */

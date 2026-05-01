@@ -147,31 +147,31 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
     };
 
     return (
-        <div className="h-[100dvh] bg-gray-900 text-white flex flex-col">
-            <header className="bg-gray-800 p-4 shadow-md flex justify-between items-center border-b border-gray-700 shrink-0">
+        <div className="h-[100dvh] bg-brand-900 text-white flex flex-col">
+            <header className="bg-brand-800 p-4 shadow-md flex justify-between items-center border-b border-brand-700 shrink-0">
                 <div className="flex items-center gap-4">
-                     <button onClick={onBack} className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600"><ArrowLeft size={20}/></button>
+                     <button onClick={onBack} className="p-2 bg-brand-700 rounded-lg hover:bg-brand-600 text-gray-200 hover:text-white transition-colors"><ArrowLeft size={20}/></button>
                      <h1 className="text-xl font-bold flex items-center gap-2">
                         {stationFilter === 'bar' ? <Beer className="text-blue-400" /> : <ChefHat className="text-orange-500" />}
                         KDS: {stationFilter === 'all' ? 'General' : stationFilter === 'kitchen' ? 'Cocina' : 'Barra'}
                      </h1>
                      
-                     <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-700 ml-4">
+                     <div className="flex bg-brand-900 rounded-lg p-1 border border-brand-700 ml-4">
                         <button 
                             onClick={() => setStationFilter('all')}
-                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${stationFilter === 'all' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${stationFilter === 'all' ? 'bg-brand-700 text-white' : 'text-gray-400 hover:text-white'}`}
                         >
                             TODO
                         </button>
                         <button 
                             onClick={() => setStationFilter('kitchen')}
-                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors flex items-center gap-1 ${stationFilter === 'kitchen' ? 'bg-orange-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors flex items-center gap-1 ${stationFilter === 'kitchen' ? 'bg-orange-600 text-white' : 'text-gray-400 hover:text-white'}`}
                         >
                             <Utensils size={12} /> COCINA
                         </button>
                         <button 
                             onClick={() => setStationFilter('bar')}
-                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors flex items-center gap-1 ${stationFilter === 'bar' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors flex items-center gap-1 ${stationFilter === 'bar' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                         >
                             <Beer size={12} /> BARRA
                         </button>
@@ -185,7 +185,7 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-yellow-500 rounded-full"></div> +15 min</div>
                         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-full"></div> +30 min</div>
                      </div>
-                     <button onClick={() => refetch()} className="p-2 bg-gray-700 rounded-full hover:bg-white hover:text-gray-900 transition-colors"><RefreshCw size={18} /></button>
+                     <button onClick={() => refetch()} className="p-2 bg-brand-700 text-gray-200 rounded-full hover:bg-brand-600 hover:text-white transition-colors"><RefreshCw size={18} /></button>
                 </div>
             </header>
 
@@ -197,7 +197,7 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                 ) : (
                     <div className="flex gap-4 h-full">
                         {orders.length === 0 && (
-                            <div className="w-full flex items-center justify-center text-gray-500 text-2xl font-bold opacity-30">
+                            <div className="w-full flex items-center justify-center text-gray-400 text-2xl font-bold opacity-50">
                                 NO HAY COMANDAS PENDIENTES
                             </div>
                         )}
@@ -209,10 +209,10 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                             if (waitingMins > 30) headerColor = "bg-red-600 animate-pulse";
 
                             return (
-                                <div key={order.id} className="min-w-[300px] w-[300px] bg-gray-800 rounded-xl overflow-hidden flex flex-col shadow-xl border border-gray-700 animate-in slide-in-from-right-4 duration-300">
+                                <div key={order.id} className="min-w-[300px] w-[300px] bg-brand-800 rounded-xl overflow-hidden flex flex-col shadow-xl border border-brand-700 animate-in slide-in-from-right-4 duration-300">
                                     <div className={`${headerColor} p-3 flex justify-between items-center text-white font-bold`}>
                                         <span className="text-lg">{order.tables?.name || 'Mesa ?'}</span>
-                                        <div className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded text-sm">
+                                        <div className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded text-sm text-white">
                                             <Clock size={14} /> {waitingMins}m
                                         </div>
                                     </div>
@@ -220,13 +220,13 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                                     <div className="flex-1 overflow-y-auto p-2 space-y-4">
                                         {Object.entries(order.groupedItems).map(([categoryName, items]: [string, any]) => (
                                             <div key={categoryName} className="space-y-2">
-                                                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-700 pb-1">
+                                                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-brand-700 pb-1">
                                                     {categoryName}
                                                 </div>
                                                 {items.map((item: OrderItem) => (
                                                     <div 
                                                         key={item.id} 
-                                                        className={`p-3 rounded-lg border-l-4 transition-all ${user?.role === 'waiter' ? 'cursor-default' : 'cursor-pointer hover:bg-gray-700'} ${item.status === 'ready' ? 'bg-green-900/20 border-green-500' : 'bg-gray-900 border-gray-600'}`}
+                                                        className={`p-3 rounded-lg border-l-4 transition-all ${user?.role === 'waiter' ? 'cursor-default' : 'cursor-pointer hover:bg-brand-700'} ${item.status === 'ready' ? 'bg-green-500/20 border-green-500' : 'bg-brand-900 border-brand-600'}`}
                                                         onClick={() => handleItemAction(item)}
                                                     >
                                                         <div className="flex justify-between items-start">
@@ -241,7 +241,7 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
                                         ))}
                                     </div>
 
-                                    <div className="p-2 bg-gray-900 text-center text-xs text-gray-500 uppercase font-mono border-t border-gray-700">
+                                    <div className="p-2 bg-brand-900/50 text-center text-xs text-gray-400 uppercase font-mono border-t border-brand-700">
                                         #{order.id.slice(0,8)}
                                     </div>
                                 </div>
