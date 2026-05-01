@@ -22,11 +22,12 @@ const CurrentTime: React.FC = () => {
   }).format(time);
 
   return (
-    <div className="flex flex-col items-center text-brand-100">
-      <div className="text-6xl font-bold tracking-tight font-mono mb-2 drop-shadow-lg flex items-center gap-3">
+    <div className="flex flex-row items-baseline gap-3 text-brand-100">
+      <div className="text-3xl sm:text-4xl font-bold tracking-tight font-mono drop-shadow-lg flex items-center">
+         <Clock className="w-5 h-5 sm:w-6 sm:h-6 mr-2 opacity-80 hidden sm:inline-block" />
          {formattedTime}
       </div>
-      <div className="text-sm uppercase tracking-widest opacity-80 font-medium">
+      <div className="text-xs sm:text-sm uppercase tracking-widest opacity-80 font-medium">
         {formattedDate}
       </div>
     </div>

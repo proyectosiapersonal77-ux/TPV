@@ -102,6 +102,9 @@ export const processSyncQueue = async () => {
                 if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
                     console.warn(`⚠️ Saltando tarea duplicada (ID: ${job.id}, Tabla: ${job.table_name}):`, error.message);
                     await db.syncQueue.delete(job.id!); // Treat as success/done to unblock queue
+                } else if (error.code === '23503' || (error.message && error.message.includes('foreign key constraint'))) {
+                    console.warn(`⚠️ Saltando tarea con conflicto de clave foránea (ID: ${job.id}, Tabla: ${job.table_name}):`, error.message);
+                    await db.syncQueue.delete(job.id!); // Treat as success/done to unblock queue
                 } else {
                     console.error(`❌ Fallo al sincronizar job ${job.id}:`, error);
                     // Stop processing to maintain order integrity for dependent items
