@@ -30,7 +30,7 @@ const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onNavigate }) => {
       {/* Sidebar - Now a floating panel matching the content height */}
       <aside className="w-64 bg-brand-800 rounded-2xl border border-brand-700 shadow-xl flex flex-col z-20 h-[88vh] shrink-0">
         <div className="p-6 border-b border-brand-700 flex items-center justify-between">
-          <h2 className="text-xl font-bold flex items-center gap-2 text-gray-100">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-white">
             <Settings className="text-brand-accent" />
             Config
           </h2>
