@@ -76,7 +76,7 @@ const WhiteLabelManagement: React.FC = () => {
     };
 
     return (
-        <div className="p-6 h-full flex flex-col">
+        <div className="p-6 h-full flex flex-col overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-white">Marca Blanca (White-label)</h2>
                 <button 
@@ -96,7 +96,7 @@ const WhiteLabelManagement: React.FC = () => {
                         {themeMode === 'dark' ? <Moon size={20} className="text-brand-accent" /> : <Sun size={20} className="text-brand-accent" />}
                         Modo Visual
                     </h3>
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <button
                             onClick={() => setThemeMode('dark')}
                             className={`flex-1 p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${themeMode === 'dark' ? 'border-brand-accent bg-brand-accent/10 text-white' : 'border-brand-700 bg-brand-900/50 text-gray-400 hover:border-brand-600 hover:text-gray-300'}`}
@@ -120,7 +120,7 @@ const WhiteLabelManagement: React.FC = () => {
                         <Palette size={20} className="text-brand-accent" />
                         Color Corporativo
                     </h3>
-                    <div className="flex items-center gap-4 p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
                         <div className="flex-1">
                             <h4 className="font-bold text-white">Color Principal</h4>
                             <p className="text-sm text-gray-400">Este color se usará en botones, acentos y elementos destacados de la interfaz.</p>
@@ -145,10 +145,10 @@ const WhiteLabelManagement: React.FC = () => {
                         <ImageIcon size={20} className="text-brand-accent" />
                         Logotipo del Restaurante
                     </h3>
-                    <div className="flex items-start gap-6 p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
-                        <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 p-4 bg-brand-900/50 rounded-xl border border-brand-700/50 w-full overflow-hidden">
+                        <div className="flex-1 w-full text-center sm:text-left">
                             <h4 className="font-bold text-white mb-1">Subir Logo</h4>
-                            <p className="text-sm text-gray-400 mb-4">Se recomienda una imagen PNG con fondo transparente. Se mostrará en la pantalla principal y en los tickets.</p>
+                            <p className="text-sm text-gray-400 mb-4 break-words">Se recomienda una imagen PNG con fondo transparente. Se mostrará en la pantalla principal y en los tickets.</p>
                             
                             <input 
                                 type="file" 
@@ -158,11 +158,11 @@ const WhiteLabelManagement: React.FC = () => {
                                 onChange={handleImageUpload}
                             />
                             
-                            <div className="flex gap-3">
+                            <div className="flex flex-col sm:flex-row gap-3 w-full">
                                 <button 
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isUploading}
-                                    className="bg-brand-700 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                                    className="w-full sm:w-auto bg-brand-700 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     {isUploading ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
                                     Seleccionar Imagen
@@ -170,7 +170,7 @@ const WhiteLabelManagement: React.FC = () => {
                                 {logoUrl && (
                                     <button 
                                         onClick={handleRemoveLogo}
-                                        className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 border border-red-500/20 hover:border-red-500"
+                                        className="w-full sm:w-auto bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 border border-red-500/20 hover:border-red-500"
                                     >
                                         <Trash2 size={18} />
                                         Eliminar
@@ -179,7 +179,7 @@ const WhiteLabelManagement: React.FC = () => {
                             </div>
                         </div>
                         
-                        <div className="w-48 h-32 bg-brand-900 rounded-xl border-2 border-dashed border-brand-600 flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="w-full sm:w-48 h-32 bg-brand-900 rounded-xl border-2 border-dashed border-brand-600 flex items-center justify-center overflow-hidden shrink-0">
                             {logoUrl ? (
                                 <img src={logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain p-2" />
                             ) : isUploading ? (
