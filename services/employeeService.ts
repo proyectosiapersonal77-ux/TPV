@@ -7,7 +7,7 @@ export const getAllEmployees = async (): Promise<Employee[]> => {
   // This prevents the PIN from being visible in the network tab or browser state.
   const { data, error } = await supabase
     .from('employees')
-    .select('id, name, role, active, created_at')
+    .select('id, name, role, active, preferences, created_at')
     .order('name');
   
   if (error) throw error;
@@ -20,7 +20,7 @@ export const createEmployee = async (employee: Omit<Employee, 'id' | 'created_at
   const { data, error } = await supabase
     .from('employees')
     .insert([employee])
-    .select('id, name, role, active, created_at') // Return non-sensitive data
+    .select('id, name, role, active, preferences, created_at') // Return non-sensitive data
     .single();
 
   if (error) throw error;
@@ -33,7 +33,7 @@ export const updateEmployee = async (id: string, updates: Partial<Employee>): Pr
     .from('employees')
     .update(updates)
     .eq('id', id)
-    .select('id, name, role, active, created_at') // Return non-sensitive data
+    .select('id, name, role, active, preferences, created_at') // Return non-sensitive data
     .single();
 
   if (error) throw error;

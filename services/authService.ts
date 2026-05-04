@@ -8,7 +8,7 @@ export const verifyPin = async (pin: string): Promise<{ user: Employee | null; r
     // The 'pin' column is excluded from the result set.
     const { data, error } = await supabase
       .from('employees')
-      .select('id, name, role, active, created_at')
+      .select('id, name, role, active, preferences, created_at')
       .eq('pin', pin)
       .eq('active', true)
       .single();
@@ -46,7 +46,7 @@ export const verifyPin = async (pin: string): Promise<{ user: Employee | null; r
 export const getEmployees = async (): Promise<Employee[]> => {
     const { data, error } = await supabase
         .from('employees')
-        .select('id, name, role, active, created_at')
+        .select('id, name, role, active, preferences, created_at')
         .eq('active', true)
         .order('name');
     

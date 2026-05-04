@@ -4,7 +4,7 @@ import { Employee, Role, UserRole } from '../../types';
 import { getAllEmployees, createEmployee, updateEmployee, deleteEmployee } from '../../services/employeeService';
 import { getAllRoles, createRole, deleteRole, updateRole } from '../../services/roleService';
 import { supabase } from '../../Supabase';
-import { MODULES, hasModuleAccess } from '../../utils/permissions';
+import { MODULES, hasModuleAccess, hasModuleWriteAccess } from '../../utils/permissions';
 import { applyTourRestrictionNoThrow } from '../../utils/tourMode';
 
 const UserManagement: React.FC = () => {
@@ -33,6 +33,7 @@ const UserManagement: React.FC = () => {
     active: true
   });
   const [userModulePermissions, setUserModulePermissions] = useState<Record<string, boolean>>({});
+  const [userModuleWritePermissions, setUserModuleWritePermissions] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
 
   // Role Manager State
@@ -88,6 +89,7 @@ const UserManagement: React.FC = () => {
         active: employee.active
       });
       setUserModulePermissions(employee.preferences?.module_permissions || {});
+      setUserModuleWritePermissions(employee.preferences?.module_write_permissions || {});
     } else {
       setEditingEmployee(null);
       const defaultRole = roles.length > 0 ? roles[0].name : 'waiter';
@@ -98,6 +100,7 @@ const UserManagement: React.FC = () => {
         active: true
       });
       setUserModulePermissions({});
+      setUserModuleWritePermissions({});
     }
     setIsModalOpen(true);
   };
@@ -138,7 +141,8 @@ const UserManagement: React.FC = () => {
             active: formData.active,
             preferences: {
                 ...(editingEmployee?.preferences || {}),
-                module_permissions: userModulePermissions
+                module_permissions: userModulePermissions,
+                module_write_permissions: userModuleWritePermissions
             }
         };
         if (formData.pin.trim() !== '') {
@@ -148,7 +152,10 @@ const UserManagement: React.FC = () => {
       } else {
         await createEmployee({
             ...formData, 
-            preferences: { module_permissions: userModulePermissions }
+            preferences: { 
+                module_permissions: userModulePermissions,
+                module_write_permissions: userModuleWritePermissions
+            }
         } as any);
       }
       setIsModalOpen(false);
@@ -470,24 +477,47 @@ const UserManagement: React.FC = () => {
                                     const isAllowed = hasModuleAccess(mod.id, formData.role, userModulePermissions);
                                     
                                     return (
-                                        <label key={mod.id} className={`flex items-center justify-between cursor-pointer group p-3 rounded-lg border transition-colors ${isAllowed ? 'bg-brand-900 border-brand-600/50 hover:border-brand-500' : 'bg-brand-900/30 border-brand-700/30 hover:border-brand-600/50'}`}>
-                                            <span className={`text-sm transition-colors ${isAllowed ? 'text-white font-medium' : 'text-gray-400 group-hover:text-gray-300'}`}>{mod.label}</span>
-                                            <div className="relative inline-flex items-center cursor-pointer">
-                                                <input 
-                                                    type="checkbox" 
-                                                    className="sr-only peer"
-                                                    checked={isAllowed}
-                                                    onChange={(e) => {
-                                                        const newVal = e.target.checked;
-                                                        setUserModulePermissions(prev => ({
-                                                            ...prev,
-                                                            [mod.id]: newVal
-                                                        }));
-                                                    }}
-                                                />
-                                                <div className="w-9 h-5 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-accent opacity-90"></div>
-                                            </div>
-                                        </label>
+                                        <div key={mod.id} className={`flex flex-col gap-2 p-3 rounded-lg border transition-colors ${isAllowed ? 'bg-brand-900 border-brand-600/50 hover:border-brand-500' : 'bg-brand-900/30 border-brand-700/30 hover:border-brand-600/50'}`}>
+                                            <label className="flex items-center justify-between cursor-pointer group">
+                                                <span className={`text-sm transition-colors ${isAllowed ? 'text-white font-medium' : 'text-gray-400 group-hover:text-gray-300'}`}>{mod.label}</span>
+                                                <div className="relative inline-flex items-center cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="sr-only peer"
+                                                        checked={isAllowed}
+                                                        onChange={(e) => {
+                                                            const newVal = e.target.checked;
+                                                            setUserModulePermissions(prev => ({
+                                                                ...prev,
+                                                                [mod.id]: newVal
+                                                            }));
+                                                        }}
+                                                    />
+                                                    <div className="w-9 h-5 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-accent opacity-90"></div>
+                                                </div>
+                                            </label>
+
+                                            {isAllowed && (
+                                                <label className="flex items-center justify-between cursor-pointer group pl-2 mt-1 border-t border-brand-700/50 pt-2">
+                                                    <span className="text-xs text-gray-400 group-hover:text-gray-300">Permitir Modificar Datos</span>
+                                                    <div className="relative inline-flex items-center cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="sr-only peer"
+                                                            checked={hasModuleWriteAccess(mod.id, formData.role, userModuleWritePermissions)}
+                                                            onChange={(e) => {
+                                                                const newVal = e.target.checked;
+                                                                setUserModuleWritePermissions(prev => ({
+                                                                    ...prev,
+                                                                    [mod.id]: newVal
+                                                                }));
+                                                            }}
+                                                        />
+                                                        <div className="w-7 h-4 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-accent opacity-90"></div>
+                                                    </div>
+                                                </label>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>

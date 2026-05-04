@@ -12,6 +12,44 @@ export const MODULES = [
     { id: 'module_config', label: 'Configuración de App' }
 ];
 
+export const hasModuleWriteAccess = (
+    moduleId: string, 
+    userRoleString: string, 
+    userModuleWriteOverrides?: Record<string, boolean>
+): boolean => {
+    // 1. Check explicit user override first.
+    if (userModuleWriteOverrides && userModuleWriteOverrides[moduleId] !== undefined) {
+        return userModuleWriteOverrides[moduleId];
+    }
+
+    // 2. Fallback to Role defaults.
+    const roleStr = (userRoleString || '').toLowerCase();
+    
+    // Tour role can NEVER write
+    if (roleStr === UserRole.TOUR || roleStr === 'tour') return false;
+
+    const isAdmin = roleStr === UserRole.ADMIN || roleStr.includes('admin');
+
+    // Admins have write access to everything by default.
+    if (isAdmin) return true;
+
+    // Managers/leads often have write access
+    if (roleStr.includes('encargad')) return true;
+
+    // By default, non-admins do not have write access unless specified
+    // Waiters can write to pos/tables obviously, kitchen to kitchen
+    if (roleStr === UserRole.KITCHEN || roleStr.includes('cocina')) {
+        return ['module_kitchen', 'module_cfd'].includes(moduleId);
+    }
+
+    if (roleStr === UserRole.WAITER || roleStr.includes('sala') || roleStr.includes('camarer')) {
+        return ['module_pos', 'module_tables', 'module_cfd'].includes(moduleId);
+    }
+
+    // Default deny write
+    return false;
+};
+
 export const hasModuleAccess = (
     moduleId: string, 
     userRoleString: string, 
