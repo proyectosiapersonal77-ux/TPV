@@ -278,9 +278,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                       </button>
                   </div>
                   <div className="p-6 space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50 gap-4">
                           <div className="flex items-center gap-4">
-                              <div className={`p-3 rounded-xl ${soundsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
+                              <div className={`p-3 rounded-xl shrink-0 ${soundsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
                                   {soundsEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
                               </div>
                               <div>
@@ -288,7 +288,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                                   <p className="text-sm text-gray-400">Activar feedback auditivo</p>
                               </div>
                           </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0 self-end sm:self-auto">
                               <input 
                                   type="checkbox" 
                                   className="sr-only peer"
@@ -299,9 +299,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                           </label>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50 gap-4">
                           <div className="flex items-center gap-4">
-                              <div className={`p-3 rounded-xl ${hapticsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
+                              <div className={`p-3 rounded-xl shrink-0 ${hapticsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
                                   <Smartphone size={24} />
                               </div>
                               <div>
@@ -309,7 +309,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                                   <p className="text-sm text-gray-400">Activar feedback táctil</p>
                               </div>
                           </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0 self-end sm:self-auto">
                               <input 
                                   type="checkbox" 
                                   className="sr-only peer"

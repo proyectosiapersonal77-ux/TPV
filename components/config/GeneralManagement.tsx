@@ -46,9 +46,9 @@ const GeneralManagement: React.FC = () => {
                 <h3 className="text-lg font-bold text-white mb-4 border-b border-brand-700 pb-2">Preferencias del Sistema</h3>
                 
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50 gap-4">
                         <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl ${globalSoundsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
+                            <div className={`p-3 rounded-xl shrink-0 ${globalSoundsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
                                 {globalSoundsEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
                             </div>
                             <div>
@@ -56,7 +56,7 @@ const GeneralManagement: React.FC = () => {
                                 <p className="text-sm text-gray-400">Activar o desactivar los sonidos de feedback (clicks, errores, éxito) para todos los usuarios en este dispositivo.</p>
                             </div>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0 self-end sm:self-auto">
                             <input 
                                 type="checkbox" 
                                 className="sr-only peer"
@@ -67,9 +67,9 @@ const GeneralManagement: React.FC = () => {
                         </label>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50 gap-4">
                         <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl ${globalHapticsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
+                            <div className={`p-3 rounded-xl shrink-0 ${globalHapticsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
                                 <Smartphone size={24} />
                             </div>
                             <div>
@@ -77,7 +77,7 @@ const GeneralManagement: React.FC = () => {
                                 <p className="text-sm text-gray-400">Permitir que el dispositivo vibre para confirmar acciones (si el dispositivo lo soporta).</p>
                             </div>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0 self-end sm:self-auto">
                             <input 
                                 type="checkbox" 
                                 className="sr-only peer"
