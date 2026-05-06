@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Save } from 'lucide-react';
+import { Volume2, VolumeX, Save, Smartphone } from 'lucide-react';
 
 const GeneralManagement: React.FC = () => {
     const [globalSoundsEnabled, setGlobalSoundsEnabled] = useState(true);
+    const [globalHapticsEnabled, setGlobalHapticsEnabled] = useState(true);
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        const setting = localStorage.getItem('globalSoundsEnabled');
-        if (setting === 'false') {
+        const soundSetting = localStorage.getItem('globalSoundsEnabled');
+        if (soundSetting === 'false') {
             setGlobalSoundsEnabled(false);
+        }
+        
+        const hapticSetting = localStorage.getItem('globalHapticsEnabled');
+        if (hapticSetting === 'false') {
+            setGlobalHapticsEnabled(false);
         }
     }, []);
 
     const handleSave = () => {
         localStorage.setItem('globalSoundsEnabled', globalSoundsEnabled ? 'true' : 'false');
+        localStorage.setItem('globalHapticsEnabled', globalHapticsEnabled ? 'true' : 'false');
+        
+        // Dispatch custom events to inform the app immediately
+        window.dispatchEvent(new Event('globalPreferencesUpdated'));
+        
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
@@ -34,25 +45,48 @@ const GeneralManagement: React.FC = () => {
             <div className="bg-brand-800 border border-brand-700 rounded-2xl p-6">
                 <h3 className="text-lg font-bold text-white mb-4 border-b border-brand-700 pb-2">Preferencias del Sistema</h3>
                 
-                <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-xl ${globalSoundsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
-                            {globalSoundsEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl ${globalSoundsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
+                                {globalSoundsEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-white">Sonidos del Sistema</h4>
+                                <p className="text-sm text-gray-400">Activar o desactivar los sonidos de feedback (clicks, errores, éxito) para todos los usuarios en este dispositivo.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 className="font-bold text-white">Sonidos del Sistema</h4>
-                            <p className="text-sm text-gray-400">Activar o desactivar los sonidos de feedback (clicks, errores, éxito) para todos los usuarios en este dispositivo.</p>
-                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={globalSoundsEnabled}
+                                onChange={(e) => setGlobalSoundsEnabled(e.target.checked)}
+                            />
+                            <div className="w-14 h-7 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-brand-accent"></div>
+                        </label>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            className="sr-only peer"
-                            checked={globalSoundsEnabled}
-                            onChange={(e) => setGlobalSoundsEnabled(e.target.checked)}
-                        />
-                        <div className="w-14 h-7 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-brand-accent"></div>
-                    </label>
+
+                    <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl ${globalHapticsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
+                                <Smartphone size={24} />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-white">Vibración del Sistema (Feedback Háptico)</h4>
+                                <p className="text-sm text-gray-400">Permitir que el dispositivo vibre para confirmar acciones (si el dispositivo lo soporta).</p>
+                            </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={globalHapticsEnabled}
+                                onChange={(e) => setGlobalHapticsEnabled(e.target.checked)}
+                            />
+                            <div className="w-14 h-7 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-brand-accent"></div>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, ViewState } from '../types';
-import { LogOut, ChefHat, Utensils, ShieldAlert, User, LayoutGrid, Package, Wifi, WifiOff, RefreshCw, Settings, Banknote, BarChart3, Volume2, VolumeX, X, Save, Monitor, Lightbulb } from 'lucide-react';
+import { LogOut, ChefHat, Utensils, ShieldAlert, User, LayoutGrid, Package, Wifi, WifiOff, RefreshCw, Settings, Banknote, BarChart3, Volume2, VolumeX, X, Save, Monitor, Lightbulb, Smartphone } from 'lucide-react';
 import { syncDatabase, processSyncQueue } from '../services/syncService';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
   const [syncing, setSyncing] = useState(false);
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const [soundsEnabled, setSoundsEnabled] = useState(user?.preferences?.soundsEnabled !== false);
+  const [hapticsEnabled, setHapticsEnabled] = useState(user?.preferences?.hapticsEnabled !== false);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
@@ -65,7 +66,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
       if (!user) return;
       setSavingPrefs(true);
       try {
-          const newPreferences = { ...user.preferences, soundsEnabled };
+          const newPreferences = { ...user.preferences, soundsEnabled, hapticsEnabled };
           const updatedUser = { ...user, preferences: newPreferences };
           
           // Update local DB first for immediate effect and offline support
@@ -276,7 +277,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                           <X size={24} />
                       </button>
                   </div>
-                  <div className="p-6 space-y-6">
+                  <div className="p-6 space-y-4">
                       <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
                           <div className="flex items-center gap-4">
                               <div className={`p-3 rounded-xl ${soundsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
@@ -293,6 +294,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
                                   className="sr-only peer"
                                   checked={soundsEnabled}
                                   onChange={(e) => setSoundsEnabled(e.target.checked)}
+                              />
+                              <div className="w-14 h-7 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-brand-accent"></div>
+                          </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-brand-900/50 rounded-xl border border-brand-700/50">
+                          <div className="flex items-center gap-4">
+                              <div className={`p-3 rounded-xl ${hapticsEnabled ? 'bg-brand-accent/20 text-brand-accent' : 'bg-gray-700 text-gray-400'}`}>
+                                  <Smartphone size={24} />
+                              </div>
+                              <div>
+                                  <h4 className="font-bold text-white">Vibración</h4>
+                                  <p className="text-sm text-gray-400">Activar feedback táctil</p>
+                              </div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                  type="checkbox" 
+                                  className="sr-only peer"
+                                  checked={hapticsEnabled}
+                                  onChange={(e) => setHapticsEnabled(e.target.checked)}
                               />
                               <div className="w-14 h-7 bg-brand-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-brand-accent"></div>
                           </label>

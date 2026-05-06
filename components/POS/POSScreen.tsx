@@ -1388,7 +1388,7 @@ const POSScreen: React.FC<POSScreenProps> = ({ table, onBack, employeeId, onNavi
                                     <span className="font-bold text-xl w-8 text-center text-white">{item.quantity}</span>
                                     <button onClick={() => { soundService.playClick(); updateQuantity(idx, 1); }} className="w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 border border-brand-500 text-white rounded-lg transition-colors active:scale-95 shadow-sm"><Plus size={18}/></button>
                                 </div>
-                                <button onClick={() => { soundService.playError(); removeItem(idx); }} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 hover:border-red-500 rounded-lg transition-all active:scale-95"><Trash2 size={18}/></button>
+                                <button onClick={() => { soundService.playDelete(); removeItem(idx); }} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 hover:border-red-500 rounded-lg transition-all active:scale-95"><Trash2 size={18}/></button>
                             </div>
                         </motion.div>
                     ))}
