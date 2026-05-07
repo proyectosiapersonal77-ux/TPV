@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Delete, Lock, AlertCircle, LogIn, Loader2 } from 'lucide-react';
 import CurrentTime from './CurrentTime';
-import { soundService } from '../utils/sounds';
 
 interface PinPadProps {
   onSuccess: (pin: string) => void;
@@ -36,7 +35,7 @@ const PinPad: React.FC<PinPadProps> = ({ onSuccess, isLoading, error, clearError
   const handleNumberClick = (num: string, e?: React.MouseEvent) => {
     e?.preventDefault();
     if (isLoading) return;
-    soundService.playClick();
+    if ('vibrate' in navigator) navigator.vibrate(50);
     if (pin.length < 4) {
       setPin(prev => prev + num);
       if (error) clearError();
@@ -47,7 +46,7 @@ const PinPad: React.FC<PinPadProps> = ({ onSuccess, isLoading, error, clearError
     e.preventDefault();
     e.stopPropagation();
     if (isLoading) return;
-    soundService.playDelete();
+    if ('vibrate' in navigator) navigator.vibrate(50);
     setPin(prev => prev.slice(0, -1));
     if (error) clearError();
   };
@@ -56,7 +55,7 @@ const PinPad: React.FC<PinPadProps> = ({ onSuccess, isLoading, error, clearError
     e.preventDefault();
     e.stopPropagation();
     if (isLoading) return;
-    soundService.playDelete();
+    if ('vibrate' in navigator) navigator.vibrate(50);
     setPin('');
     if (error) clearError();
   };
