@@ -1,4 +1,5 @@
 import { useAuthStore } from '../stores/useAuthStore';
+import { SETTINGS_KEYS } from '../services/configService';
 
 class SoundService {
     private audioCtx: AudioContext | null = null;
@@ -14,7 +15,7 @@ class SoundService {
     }
 
     private isSoundEnabled(): boolean {
-        const globalEnabled = localStorage.getItem('globalSoundsEnabled') !== 'false';
+        const globalEnabled = localStorage.getItem(SETTINGS_KEYS.GLOBAL_SOUNDS_ENABLED) !== 'false';
         if (!globalEnabled) return false;
 
         const user = useAuthStore.getState().user;
@@ -26,7 +27,7 @@ class SoundService {
     }
 
     private isHapticEnabled(): boolean {
-        const globalEnabled = localStorage.getItem('globalHapticsEnabled') !== 'false';
+        const globalEnabled = localStorage.getItem(SETTINGS_KEYS.GLOBAL_HAPTICS_ENABLED) !== 'false';
         if (!globalEnabled) return false;
 
         const user = useAuthStore.getState().user;

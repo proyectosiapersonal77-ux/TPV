@@ -6,6 +6,7 @@ import { checkSupabaseConnection } from './Supabase';
 import { verifyPin } from './services/authService';
 import { UserRole, Table, ViewState } from './types';
 import { syncDatabase, processSyncQueue } from './services/syncService';
+import { fetchAndApplyGlobalSettings, SETTINGS_KEYS } from './services/configService';
 import { useAuthStore } from './stores/useAuthStore';
 
 // Lazy loaded components
@@ -55,12 +56,12 @@ const App: React.FC = () => {
     }
 
     // Load White-label settings
-    const storedColor = localStorage.getItem('brandPrimaryColor');
+    const storedColor = localStorage.getItem(SETTINGS_KEYS.BRAND_PRIMARY_COLOR);
     if (storedColor) {
         document.documentElement.style.setProperty('--brand-accent', storedColor);
         document.documentElement.style.setProperty('--brand-accentHover', storedColor);
     }
-    const storedTheme = localStorage.getItem('themeMode');
+    const storedTheme = localStorage.getItem(SETTINGS_KEYS.THEME_MODE);
     if (storedTheme === 'light') {
         document.documentElement.classList.add('light-mode');
     } else {
@@ -70,6 +71,7 @@ const App: React.FC = () => {
     // Initial Sync on App Start
     const initSync = async () => {
         setIsSyncing(true);
+        await fetchAndApplyGlobalSettings();
         await syncDatabase(); // Pull data
         await processSyncQueue(); // Push pending
         setIsSyncing(false);

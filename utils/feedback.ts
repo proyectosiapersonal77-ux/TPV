@@ -1,4 +1,5 @@
 import { useAuthStore } from '../stores/useAuthStore';
+import { SETTINGS_KEYS } from '../services/configService';
 
 // Simple AudioContext cache to avoid recreating
 let audioCtx: AudioContext | null = null;
@@ -106,13 +107,13 @@ export const useFeedback = () => {
   const { user } = useAuthStore();
 
   const isSoundAllowed = () => {
-    const globalSound = localStorage.getItem('globalSoundsEnabled') !== 'false';
+    const globalSound = localStorage.getItem(SETTINGS_KEYS.GLOBAL_SOUNDS_ENABLED) !== 'false';
     const userSound = user?.preferences?.soundsEnabled !== false;
     return globalSound && userSound;
   };
 
   const isHapticAllowed = () => {
-    const globalHaptic = localStorage.getItem('globalHapticsEnabled') !== 'false';
+    const globalHaptic = localStorage.getItem(SETTINGS_KEYS.GLOBAL_HAPTICS_ENABLED) !== 'false';
     const userHaptic = user?.preferences?.hapticsEnabled !== false;
     return globalHaptic && userHaptic && 'vibrate' in navigator;
   };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, Save, Smartphone } from 'lucide-react';
+import { updateGlobalSetting, SETTINGS_KEYS } from '../../services/configService';
 
 const GeneralManagement: React.FC = () => {
     const [globalSoundsEnabled, setGlobalSoundsEnabled] = useState(true);
@@ -7,23 +8,20 @@ const GeneralManagement: React.FC = () => {
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        const soundSetting = localStorage.getItem('globalSoundsEnabled');
+        const soundSetting = localStorage.getItem(SETTINGS_KEYS.GLOBAL_SOUNDS_ENABLED);
         if (soundSetting === 'false') {
             setGlobalSoundsEnabled(false);
         }
         
-        const hapticSetting = localStorage.getItem('globalHapticsEnabled');
+        const hapticSetting = localStorage.getItem(SETTINGS_KEYS.GLOBAL_HAPTICS_ENABLED);
         if (hapticSetting === 'false') {
             setGlobalHapticsEnabled(false);
         }
     }, []);
 
-    const handleSave = () => {
-        localStorage.setItem('globalSoundsEnabled', globalSoundsEnabled ? 'true' : 'false');
-        localStorage.setItem('globalHapticsEnabled', globalHapticsEnabled ? 'true' : 'false');
-        
-        // Dispatch custom events to inform the app immediately
-        window.dispatchEvent(new Event('globalPreferencesUpdated'));
+    const handleSave = async () => {
+        await updateGlobalSetting(SETTINGS_KEYS.GLOBAL_SOUNDS_ENABLED, globalSoundsEnabled ? 'true' : 'false');
+        await updateGlobalSetting(SETTINGS_KEYS.GLOBAL_HAPTICS_ENABLED, globalHapticsEnabled ? 'true' : 'false');
         
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, Image as ImageIcon, Palette, Trash2, Moon, Sun, Loader2 } from 'lucide-react';
 import { uploadProductImage } from '../../services/inventoryService';
+import { updateGlobalSetting, SETTINGS_KEYS } from '../../services/configService';
 
 const WhiteLabelManagement: React.FC = () => {
     const [primaryColor, setPrimaryColor] = useState('#d97706'); // Default brand-accent
@@ -11,42 +12,29 @@ const WhiteLabelManagement: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const storedColor = localStorage.getItem('brandPrimaryColor');
+        const storedColor = localStorage.getItem(SETTINGS_KEYS.BRAND_PRIMARY_COLOR);
         if (storedColor) {
             setPrimaryColor(storedColor);
         }
-        const storedLogo = localStorage.getItem('brandLogo');
+        const storedLogo = localStorage.getItem(SETTINGS_KEYS.BRAND_LOGO);
         if (storedLogo) {
             setLogoUrl(storedLogo);
         }
-        const storedTheme = localStorage.getItem('themeMode') as 'dark' | 'light';
+        const storedTheme = localStorage.getItem(SETTINGS_KEYS.THEME_MODE) as 'dark' | 'light';
         if (storedTheme) {
             setThemeMode(storedTheme);
         }
     }, []);
 
-    const handleSave = () => {
-        localStorage.setItem('brandPrimaryColor', primaryColor);
-        localStorage.setItem('themeMode', themeMode);
+    const handleSave = async () => {
+        await updateGlobalSetting(SETTINGS_KEYS.BRAND_PRIMARY_COLOR, primaryColor);
+        await updateGlobalSetting(SETTINGS_KEYS.THEME_MODE, themeMode);
+        
         if (logoUrl) {
-            localStorage.setItem('brandLogo', logoUrl);
+            await updateGlobalSetting(SETTINGS_KEYS.BRAND_LOGO, logoUrl);
         } else {
-            localStorage.removeItem('brandLogo');
+            await updateGlobalSetting(SETTINGS_KEYS.BRAND_LOGO, null);
         }
-        
-        // Apply color immediately
-        document.documentElement.style.setProperty('--brand-accent', primaryColor);
-        document.documentElement.style.setProperty('--brand-accentHover', primaryColor);
-        
-        // Apply theme
-        if (themeMode === 'light') {
-            document.documentElement.classList.add('light-mode');
-        } else {
-            document.documentElement.classList.remove('light-mode');
-        }
-        
-        // Dispatch event so other components (like Dashboard header) can update
-        window.dispatchEvent(new Event('brandUpdated'));
 
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
