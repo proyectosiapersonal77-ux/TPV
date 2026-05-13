@@ -1711,22 +1711,28 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ onBack, onNav
                     {activeTab === 'products' && (
                       <>
                         <div className="flex flex-col sm:flex-row gap-4">
-                           <div className={`w-full sm:w-32 h-32 rounded-xl border-2 border-dashed flex items-center justify-center relative overflow-hidden transition-all group shrink-0 ${isDragging ? 'border-brand-accent bg-brand-accent/10' : 'border-brand-600 bg-brand-900 hover:border-gray-500'}`} onDragEnter={handleDragEnter} onDragLeave={handleDragLeave} onDragOver={handleDragOver} onDrop={handleDrop}>
-                                {imagePreview ? (
-                                    <>
-                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                                            <button type="button" onClick={() => fileInputRef.current?.click()} className="text-white hover:text-brand-accent"><Edit2 size={16} /></button>
-                                            <button type="button" onClick={handleRemoveImage} className="text-white hover:text-red-400"><Trash2 size={16} /></button>
+                           <div className="flex flex-col gap-2 shrink-0 w-full sm:w-32">
+                               <div className={`w-full h-32 rounded-xl border-2 border-dashed flex items-center justify-center relative overflow-hidden transition-all group ${isDragging ? 'border-brand-accent bg-brand-accent/10' : 'border-brand-600 bg-brand-900 hover:border-gray-500'}`} onDragEnter={handleDragEnter} onDragLeave={handleDragLeave} onDragOver={handleDragOver} onDrop={handleDrop}>
+                                    {imagePreview ? (
+                                        <>
+                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                                                <button type="button" onClick={() => fileInputRef.current?.click()} className="text-white hover:text-brand-accent"><Edit2 size={16} /></button>
+                                                <button type="button" onClick={handleRemoveImage} className="text-white hover:text-red-400"><Trash2 size={16} /></button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div onClick={() => fileInputRef.current?.click()} className="text-center p-2 cursor-pointer flex flex-col items-center justify-center h-full w-full">
+                                            <Upload size={20} className="text-gray-500 mb-1" />
+                                            <span className="text-[10px] text-gray-500 font-medium leading-tight">Click o arrastra imagen</span>
                                         </div>
-                                    </>
-                                ) : (
-                                    <div onClick={() => fileInputRef.current?.click()} className="text-center p-2 cursor-pointer flex flex-col items-center justify-center h-full w-full">
-                                        <Upload size={20} className="text-gray-500 mb-1" />
-                                        <span className="text-[10px] text-gray-500 font-medium leading-tight">Click o arrastra imagen</span>
-                                    </div>
-                                )}
-                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageSelect} />
+                                    )}
+                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageSelect} />
+                               </div>
+                               <label className="flex items-center justify-center gap-1.5 text-[10px] sm:text-xs text-gray-300 font-bold bg-brand-900 border border-brand-700 rounded-lg p-2 cursor-pointer hover:bg-brand-800 transition-colors">
+                                  <input type="checkbox" className="rounded border-gray-600 text-brand-accent focus:ring-brand-accent bg-brand-800" checked={productForm.active !== false} onChange={(e) => setProductForm({...productForm, active: e.target.checked})} />
+                                  Activo (TPV)
+                               </label>
                            </div>
 
                            <div className="flex-1 space-y-4">
