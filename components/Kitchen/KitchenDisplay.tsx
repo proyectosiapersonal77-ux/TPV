@@ -148,44 +148,54 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onBack, onNavigate }) =
 
     return (
         <div className="h-[100dvh] bg-brand-900 text-white flex flex-col">
-            <header className="bg-brand-800 p-4 shadow-md flex justify-between items-center border-b border-brand-700 shrink-0">
-                <div className="flex items-center gap-4">
-                     <button onClick={onBack} className="p-2 bg-brand-700 rounded-lg hover:bg-brand-600 text-gray-200 hover:text-white transition-colors"><ArrowLeft size={20}/></button>
-                     <h1 className="text-xl font-bold flex items-center gap-2">
-                        {stationFilter === 'bar' ? <Beer className="text-blue-400" /> : <ChefHat className="text-orange-500" />}
-                        KDS: {stationFilter === 'all' ? 'General' : stationFilter === 'kitchen' ? 'Cocina' : 'Barra'}
-                     </h1>
-                     
-                     <div className="flex bg-brand-900 rounded-lg p-1 border border-brand-700 ml-4">
+            <header className="bg-brand-800 p-3 sm:p-4 shadow-md flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 md:gap-4 border-b border-brand-700 shrink-0">
+                <div className="flex items-center justify-between w-full md:w-auto">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                         <button onClick={onBack} className="p-2 bg-brand-700 rounded-lg hover:bg-brand-600 text-gray-200 hover:text-white transition-colors"><ArrowLeft size={20}/></button>
+                         <h1 className="text-xl font-bold flex items-center gap-2">
+                            {stationFilter === 'bar' ? <Beer className="text-blue-400" /> : <ChefHat className="text-orange-500" />}
+                            <span className="hidden sm:inline">KDS: {stationFilter === 'all' ? 'General' : stationFilter === 'kitchen' ? 'Cocina' : 'Barra'}</span>
+                            <span className="sm:hidden">KDS</span>
+                         </h1>
+                    </div>
+                    {/* Controles para móvil */}
+                    <div className="flex md:hidden items-center gap-2">
+                         <button onClick={() => refetch()} className="p-2 bg-brand-700 text-gray-200 rounded-lg hover:bg-brand-600 hover:text-white transition-colors"><RefreshCw size={20} /></button>
+                         <AdminNavigation onNavigate={onNavigate} currentView="kitchen" align="right" />
+                    </div>
+                </div>
+                
+                <div className="w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar flex-1 flex md:justify-center">
+                     <div className="flex bg-brand-900 rounded-lg p-1 border border-brand-700 min-w-max w-full sm:w-auto">
                         <button 
                             onClick={() => setStationFilter('all')}
-                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${stationFilter === 'all' ? 'bg-brand-700 text-white' : 'text-gray-400 hover:text-white'}`}
+                            className={`px-3 py-2 md:py-1 text-sm md:text-xs font-bold rounded-md transition-colors flex-1 ${stationFilter === 'all' ? 'bg-brand-700 text-white' : 'text-gray-400 hover:text-white'}`}
                         >
                             TODO
                         </button>
                         <button 
                             onClick={() => setStationFilter('kitchen')}
-                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors flex items-center gap-1 ${stationFilter === 'kitchen' ? 'bg-orange-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                            className={`px-3 py-2 md:py-1 text-sm md:text-xs font-bold rounded-md transition-colors flex items-center justify-center gap-1 flex-1 ${stationFilter === 'kitchen' ? 'bg-orange-600 text-white' : 'text-gray-400 hover:text-white'}`}
                         >
-                            <Utensils size={12} /> COCINA
+                            <Utensils size={14} className="md:w-3 md:h-3" /> COCINA
                         </button>
                         <button 
                             onClick={() => setStationFilter('bar')}
-                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors flex items-center gap-1 ${stationFilter === 'bar' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                            className={`px-3 py-2 md:py-1 text-sm md:text-xs font-bold rounded-md transition-colors flex items-center justify-center gap-1 flex-1 ${stationFilter === 'bar' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                         >
-                            <Beer size={12} /> BARRA
+                            <Beer size={14} className="md:w-3 md:h-3" /> BARRA
                         </button>
                      </div>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm text-gray-400">
-                     <AdminNavigation onNavigate={onNavigate} currentView="kitchen" />
-                     <div className="hidden md:flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-4 text-sm text-gray-400">
+                     <div className="hidden lg:flex items-center gap-4">
                         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-green-500 rounded-full"></div> En tiempo</div>
                         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-yellow-500 rounded-full"></div> +15 min</div>
                         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-full"></div> +30 min</div>
                      </div>
                      <button onClick={() => refetch()} className="p-2 bg-brand-700 text-gray-200 rounded-full hover:bg-brand-600 hover:text-white transition-colors"><RefreshCw size={18} /></button>
+                     <AdminNavigation onNavigate={onNavigate} currentView="kitchen" />
                 </div>
             </header>
 
